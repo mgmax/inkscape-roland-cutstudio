@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 '''
 Roland CutStudio export script
-skeleton based on Visicut Inkscape Plugin:
-Copyright (C) 2012 Thomas Oster, thomas.oster@rwth-aachen.de
 Copyright (C) 2014 Max Gaukler <development@maxgaukler.de>
+
+skeleton based on Visicut Inkscape Plugin :
+Copyright (C) 2012 Thomas Oster, thomas.oster@rwth-aachen.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -70,6 +71,9 @@ def which(program, extraPaths=[]):
     
 
 # header
+# for debugging purposes you can open the resulting EPS file in Inkscape,
+#  select all, ungroup multiple times
+# --> now you can view the exported lines in inkscape
 prefix="""
 %!PS-Adobe-3.0 EPSF-3.0
 %%LanguageLevel: 2
@@ -78,7 +82,7 @@ prefix="""
 %%BeginSetup
 %%EndSetup
 %%BeginProlog
-% This code is from an inkscape-exported EPS, copyright unknown
+% This code (until EndProlog) is from an inkscape-exported EPS, copyright unknown, see cairo-library
 save
 50 dict begin
 /q { gsave } bind def
@@ -278,7 +282,9 @@ EPS2CutstudioEPS(filename+".inkscape.eps", filename+".cutstudio.eps")
 # TODO daemonize so that the plugin finishes
 #import roland_cutstudio_daemonize as daemonize
 #daemonize.createDaemon()
-Popen(["C:\Program Files\CutStudio\CutStudio.exe", "/import", filename+".cutstudio.eps"])
+if os.name=="nt":
+    DETACHED_PROCESS = 8 # start as "daemon"
+    Popen(["C:\Program Files\CutStudio\CutStudio.exe", "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
 #os.unlink(filename+".cutstudio.eps")
 #shutil.copyfile(filename+".cutstudio.eps", "/home/max/privat/icmp7/temp/exported/exported.eps")
 #Popen(["inkscape", filename+".cutstudio.eps"])

@@ -1,11 +1,17 @@
+Inkscape Plugin that exports to Roland CutStudio
+
 Windows installing:
 
-copy roland_* files to C:\Program Files\Inkscape\share\extensions\
+Copy roland_* files to C:\Program Files\Inkscape\share\extensions\
+(or Program Files (x86) )
 
+Install Roland CutStudio to the default path.
+
+Mac / Linux+wine:
+Does not work yet, the paths need to be adjusted
 
 KNOWN BUGS:
 
-TODO: plugin "hangs" until CutStudio is closed
 WONTFIX: clipping of paths doesnt work
 
 
