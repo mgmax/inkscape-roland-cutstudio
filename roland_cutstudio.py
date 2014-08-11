@@ -55,20 +55,18 @@ def removeAllButThem(element, elements):
     keepSubtree = True
   return keepSubtree
 
-def which(program):
-  def is_exe(fpath):
-    return os.path.isfile(fpath) and (os.access(fpath, os.X_OK) or fpath.endswith(".exe"))
-
-  fpath, fname = os.path.split(program)
-  if fpath:
-    if is_exe(program):
-      return program
-  else:
-    for path in os.environ["PATH"].split(os.pathsep):
+def which(program, extraPaths=[]):
+    pathlist=os.environ["PATH"].split(os.pathsep)
+    if "nt" in os.name:
+        pathlist.append(os.environ.get("ProgramFiles","C:\Program Files\\"))
+        pathlist.append(os.environ.get("ProgramFiles(x86)","C:\Program Files (x86)\\"))
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and (os.access(fpath, os.X_OK) or fpath.endswith(".exe"))
+    for path in pathlist:
       exe_file = os.path.join(path, program)
       if is_exe(exe_file):
         return exe_file
-    return None
+    raise Exception(str(program) + str(pathlist))
     
 
 # header
@@ -263,27 +261,21 @@ def EPS2CutstudioEPS(src, dest):
     outputFile.write(outputStr)
     outputFile.close()
 
-INKSCAPEBIN="inkscape" # if the inkscape.com path isnt found automatically, you can enter it here
-#If on Windows, add .exe extension
-if "windows" in os.name:
-    if not INKSCAPEBIN.lower().endswith(".com"):
-        INKSCAPEBIN += ".com"
-    if not which(INKSCAPEBIN):
-      INKSCAPEBIN="C:\Program Files\Inkscape\inkscape.exe"
+if os.name=="nt": # windows
+    INKSCAPEBIN=which("Inkscape\inkscape.exe")
+else:
+    assert False,  "CutStudio on Mac and on Linux-Wine not yet supported,  need to adjust path"
       
-#assert which(INKSCAPEBIN) != None,  "cannot find inkscape binary"
+assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
 shutil.copyfile(filename, filename+".orig.svg")
-  
-try:
-    assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".orig.svg","-T", "--export-plain-svg="+filename+".plain.svg"])
-    #os.unlink(filename+".orig.svg")
-    assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".plain.svg","-T", "--export-eps="+filename+".inkscape.eps"])
-    #os.unlink(filename+".plain.svg")
-except:
-    sys.stderr.write("Can not start inkscape ("+str(sys.exc_info())+").")
+
+assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".orig.svg","-T", "--export-plain-svg="+filename+".plain.svg"]),  "plain-SVG conversion failed"
+#os.unlink(filename+".orig.svg")
+assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".plain.svg","-T", "--export-eps="+filename+".inkscape.eps"]), "EPS conversion failed"
+#os.unlink(filename+".plain.svg")
 EPS2CutstudioEPS(filename+".inkscape.eps", filename+".cutstudio.eps")
 
-# TODO copy daemonize from visicut plugin
+# TODO daemonize so that the plugin finishes
 #import roland_cutstudio_daemonize as daemonize
 #daemonize.createDaemon()
 Popen(["C:\Program Files\CutStudio\CutStudio.exe", "/import", filename+".cutstudio.eps"])
