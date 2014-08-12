@@ -279,12 +279,10 @@ assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".plain.svg","-T", "--expor
 #os.unlink(filename+".plain.svg")
 EPS2CutstudioEPS(filename+".inkscape.eps", filename+".cutstudio.eps")
 
-# TODO daemonize so that the plugin finishes
-#import roland_cutstudio_daemonize as daemonize
-#daemonize.createDaemon()
 if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
-    Popen(["C:\Program Files\CutStudio\CutStudio.exe", "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
+    Popen([which("CutStudio\CutStudio.exe"), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
+#else:
+#   Popen(["inkscape", filename+".cutstudio.eps"])
 #os.unlink(filename+".cutstudio.eps")
-#shutil.copyfile(filename+".cutstudio.eps", "/home/max/privat/icmp7/temp/exported/exported.eps")
-#Popen(["inkscape", filename+".cutstudio.eps"])
+
