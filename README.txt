@@ -2,8 +2,9 @@ Inkscape Plugin that exports to Roland CutStudio
 
 Windows installing:
 
-Copy roland_* files to C:\Program Files\Inkscape\share\extensions\
-(or Program Files (x86) )
+checkout git repo or download the ZIP from https://github.com/mgmax/inkscape-roland-cutstudio/archive/master.zip
+
+Copy all roland_* files to the inkscape extension folder, C:\Program Files\Inkscape\share\extensions\   (or C:\Program Files (x86)\... on 64bit systems)
 
 Install Roland CutStudio to the default path: "C:\Program Files\CutStudio" or "C:\Program Files (x86)\CutStudio"
 
