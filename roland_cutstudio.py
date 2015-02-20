@@ -61,6 +61,7 @@ def which(program, extraPaths=[]):
     if "nt" in os.name:
         pathlist.append(os.environ.get("ProgramFiles","C:\Program Files\\"))
         pathlist.append(os.environ.get("ProgramFiles(x86)","C:\Program Files (x86)\\"))
+        pathlist.append("C:\Program Files\\") # needed for 64bit inkscape on 64bit Win7 machines
     def is_exe(fpath):
         return os.path.isfile(fpath) and (os.access(fpath, os.X_OK) or fpath.endswith(".exe"))
     for path in pathlist:
