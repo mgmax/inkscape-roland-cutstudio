@@ -31,30 +31,13 @@ import numpy
 
 def debug(s):
 	sys.stderr.write(s+"\n");
-elements=[]
-
+selectedElements=[]
 for arg in sys.argv[1:]:
  if arg[0] == "-":
   if len(arg) >= 5 and arg[0:5] == "--id=":
-   elements +=[arg[5:]] # UNUSED
-  elif len(arg) >= 13 and arg[0:13] == "--visicutbin=":
-   VISICUTBIN=arg[13:] # UNUSED
-  else:
-   arguments += [arg]
+   selectedElements +=[arg[5:]]
  else:
   filename = arg
-
-def removeAllButThem(element, elements):
- if element.get('id') in elements:
-  return True
- else:
-  keepSubtree = False
-  for e in element:
-   if not removeAllButThem(e, elements):
-    element.remove(e)
-   else:
-    keepSubtree = True
-  return keepSubtree
 
 def which(program, extraPaths=[]):
     pathlist=os.environ["PATH"].split(os.pathsep)
@@ -70,6 +53,37 @@ def which(program, extraPaths=[]):
         return exe_file
     raise Exception(str(program) + str(pathlist))
     
+
+# Strip SVG to only contain selected elements, convert objects to paths, unlink clones
+# This code was simply copied from the VisiCut inkscape-plugin. Some parts may be unnecessary, but as long as it works, I don't care.
+# Inkscape version: takes care of special cases where the selected objects depend on non-selected ones.
+# Examples are linked clones, flowtext limited to a shape and linked flowtext boxes (overflow into the next box).
+#
+# Inkscape is called with certain "verbs" (gui actions) to do the required cleanup
+# The idea is similar to http://bazaar.launchpad.net/~nikitakit/inkscape/svg2sif/view/head:/share/extensions/synfig_prepare.py#L181 , but more primitive - there is no need for more complicated preprocessing here
+def stripSVG_inkscape(src,dest,elements):
+ # Selection commands: select items, invert selection, delete
+    selection=[]
+    for el in elements:
+        selection += ["--select="+el]
+    if len(elements)>0:
+        #selection += ["--verb=FitCanvasToSelection"] # TODO add a user configuration option whether to keep the page size (and by this the position relative to the page)
+        selection += ["--verb=EditInvertInAllLayers","--verb=EditDelete"]
+    import shutil
+    shutil.copyfile(src, dest)
+    hidegui=["--without-gui"]
+    # currently this only works with gui  because of a bug in inkscape: https://bugs.launchpad.net/inkscape/+bug/843260
+    hidegui=[]
+     
+    command = [INKSCAPEBIN]+hidegui+[dest,"--verb=UnlockAllInAllLayers","--verb=UnhideAllInAllLayers"] + selection + ["--verb=EditSelectAllInAllLayers","--verb=EditUnlinkClone","--verb=ObjectToPath","--verb=FileSave","--verb=FileQuit"]
+    inkscape_output="(not yet run)"
+    try:
+        # run inkscape, buffer output
+        inkscape=subprocess.Popen(command, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        inkscape_output=inkscape.communicate()[0]
+    except:
+        sys.stderr.write("Error: cleaning the document with inkscape failed. Something might still be shown in visicut, but it could be incorrect. Exception information: \n" + str(sys.exc_info()[0]) + "Inkscape's output was:\n" + inkscape_output)
+
 
 # header
 # for debugging purposes you can open the resulting EPS file in Inkscape,
@@ -142,6 +156,7 @@ save
 %%EndPageSetup
 % This is a severely crippled fucked-up pseudo-postscript for importing in Roland CutStudio
 % Do not even try to open it with something else
+% FIXME opening with inkscape currently does not show any objects, although it worked some time in the past
 
 % Inkscape header, not used by cutstudio
 % Start
@@ -206,6 +221,7 @@ def EPS2CutstudioEPS(src, dest):
         return output + "\n"
     stack=[]
     scalingStack=[numpy.matrix(numpy.identity(3))]
+    lastMoveCoordinates=None
     outputStr=prefix
     inputFile=open(src)
     outputFile=open(dest, "w")
@@ -224,16 +240,10 @@ def EPS2CutstudioEPS(src, dest):
             #debug("INPUT: " + item.__repr__())
             stack.append(item)
             if item=="h": # close path
-                if True or lastCurveCoordinates!=lastMoveCoordinates:
-                    assert lastMoveCoordinates,  "closed path before first moveto"
-                    outputStr += outputLineto(float(lastMoveCoordinates[0]), float(lastMoveCoordinates[1]))
-                else:
-                    #debug("skipping unnecessary path-close")
-                    pass
-                    # endpoint and startpoint are already the same, no need for closing the path
+                assert lastMoveCoordinates,  "closed path before first moveto"
+                outputStr += outputLineto(float(lastMoveCoordinates[0]), float(lastMoveCoordinates[1]))
             elif item == "c": # bezier curveto
                 outputStr += outputFromStack(stack, 6)
-                lastCurveCoordinates=stack[-3:-1]
                 stack=[]
             elif item=="re": # rectangle
                     x=float(stack[-5])
@@ -257,7 +267,7 @@ def EPS2CutstudioEPS(src, dest):
                 if item=="m": # moveto
                     lastMoveCoordinates=stack[-3:-1]
                 elif item=="l": # lineto
-                    lastCurveCoordinates=stack[-3:-1]
+                    pass
                 outputStr += outputFromStack(stack, 2)
                 stack=[]
             else:
@@ -269,21 +279,29 @@ def EPS2CutstudioEPS(src, dest):
 if os.name=="nt": # windows
     INKSCAPEBIN=which("Inkscape\inkscape.exe")
 else:
-    assert False,  "CutStudio on Mac and on Linux-Wine not yet supported,  need to adjust path"
+    INKSCAPEBIN=which("inkscape")
       
 assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
-shutil.copyfile(filename, filename+".orig.svg")
+if len(selectedElements)==0:
+    shutil.copyfile(filename, filename+".filtered.svg")
+else:
+    # only take selected elements
+    stripSVG_inkscape(src=filename, dest=filename+".filtered.svg", elements=selectedElements)
 
-assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".orig.svg","-T", "--export-plain-svg="+filename+".plain.svg"]),  "plain-SVG conversion failed"
+#assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".orig.svg","-T", "--export-plain-svg="+filename+".plain.svg"]),  "plain-SVG conversion failed"
 #os.unlink(filename+".orig.svg")
-assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".plain.svg","-T", "--export-eps="+filename+".inkscape.eps"]), "EPS conversion failed"
+assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".filtered.svg","-T", "--export-ignore-filters",  "--export-eps="+filename+".inkscape.eps"]), "EPS conversion failed"
 #os.unlink(filename+".plain.svg")
 EPS2CutstudioEPS(filename+".inkscape.eps", filename+".cutstudio.eps")
 
 if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
     Popen([which("CutStudio\CutStudio.exe"), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
-#else:
-#   Popen(["inkscape", filename+".cutstudio.eps"])
+else:
+    #raise Exception("CutStudio on Mac and on Linux-Wine not yet supported, please open cutstudio yourself.")
+    Popen(["inkscape", filename+".filtered.svg"])
+    #Popen(["inkscape", filename+".cutstudio.eps"])
+    pass
+#os.unlink(filename+".filtered.svg")
+#os.unlink(filename)
 #os.unlink(filename+".cutstudio.eps")
-
