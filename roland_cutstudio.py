@@ -277,11 +277,15 @@ def EPS2CutstudioEPS(src, dest):
     outputFile.close()
 
 if os.name=="nt": # windows
-    INKSCAPEBIN=which("Inkscape\inkscape.exe")
+	INKSCAPEBIN = which("Inkscape\inkscape.exe")
+	INKSCAPEBIN_NOGUI = which("Inkscape\inkscape.com")
 else:
-    INKSCAPEBIN=which("inkscape")
-      
+	INKSCAPEBIN=which("inkscape")
+	INKSCAPEBIN_NOGUI = INKSCAPEBIN
+
 assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
+assert os.path.isfile(INKSCAPEBIN_NOGUI),  "cannot find inkscape binary " + INKSCAPEBIN_NOGUI
+
 if len(selectedElements)==0:
     shutil.copyfile(filename, filename+".filtered.svg")
 else:
@@ -290,7 +294,8 @@ else:
 
 #assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".orig.svg","-T", "--export-plain-svg="+filename+".plain.svg"]),  "plain-SVG conversion failed"
 #os.unlink(filename+".orig.svg")
-assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".filtered.svg","-T", "--export-ignore-filters",  "--export-eps="+filename+".inkscape.eps"]), "EPS conversion failed"
+cmd = [INKSCAPEBIN_NOGUI,"-z",filename+".filtered.svg","-T", "--export-ignore-filters",  "--export-eps="+filename+".inkscape.eps"]
+assert 0 == subprocess.call(cmd), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
 #os.unlink(filename+".plain.svg")
 EPS2CutstudioEPS(filename+".inkscape.eps", filename+".cutstudio.eps")
 
