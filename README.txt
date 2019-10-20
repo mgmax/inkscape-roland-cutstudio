@@ -34,7 +34,7 @@ It only knows these commands, one per line:
 moveto:
 1 2 m
 lineto:
-1 2 m
+1 2 l
 curveto:
 1 2 3 4 5 6 c
 
