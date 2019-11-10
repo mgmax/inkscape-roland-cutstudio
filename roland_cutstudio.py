@@ -39,12 +39,19 @@ for arg in sys.argv[1:]:
  else:
   filename = arg
 
-def which(program, extraPaths=[]):
+def which(program, extraPaths=[], subdir=None):
+    """
+    find program in the $PATH environment variable and in $extraPaths.
+    If $subdir is given, also look in the given subdirectory of each $PATH entry.
+    """
     pathlist=os.environ["PATH"].split(os.pathsep)
     if "nt" in os.name:
         pathlist.append(os.environ.get("ProgramFiles","C:\Program Files\\"))
         pathlist.append(os.environ.get("ProgramFiles(x86)","C:\Program Files (x86)\\"))
         pathlist.append("C:\Program Files\\") # needed for 64bit inkscape on 64bit Win7 machines
+        pathlist.append(os.path.dirname(os.path.dirname(os.getcwd()))) # portable application in the current directory
+    if subdir:
+        pathlist = [os.path.join(p, subdir) for p in pathlist] + pathlist
     def is_exe(fpath):
         return os.path.isfile(fpath) and (os.access(fpath, os.X_OK) or fpath.endswith(".exe"))
     for path in pathlist:
@@ -277,8 +284,8 @@ def EPS2CutstudioEPS(src, dest):
     outputFile.close()
 
 if os.name=="nt": # windows
-	INKSCAPEBIN = which("Inkscape\inkscape.exe")
-	INKSCAPEBIN_NOGUI = which("Inkscape\inkscape.com")
+	INKSCAPEBIN = which("inkscape.exe", subdir="Inkscape")
+	INKSCAPEBIN_NOGUI = which("inkscape.com", subdir="Inkscape")
 else:
 	INKSCAPEBIN=which("inkscape")
 	INKSCAPEBIN_NOGUI = INKSCAPEBIN
