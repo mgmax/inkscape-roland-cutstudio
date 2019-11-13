@@ -58,7 +58,7 @@ def which(program, extraPaths=[], subdir=None):
       exe_file = os.path.join(path, program)
       if is_exe(exe_file):
         return exe_file
-    raise Exception(str(program) + str(pathlist))
+    raise Exception("Cannot find " + str(program) " in any of these paths: " + str(pathlist) + ". Either the program is not installed, PATH is not set correctly, or this is a bug.")
     
 
 # Strip SVG to only contain selected elements, convert objects to paths, unlink clones
