@@ -1,8 +1,9 @@
-#!/usr/bin/env python2 
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# SPDX-License-Identifier: GPL-2.0-or-later
 '''
 Roland CutStudio export script
-Copyright (C) 2014 Max Gaukler <development@maxgaukler.de>
+Copyright (C) 2014 - 2020 Max Gaukler <development@maxgaukler.de>
 
 skeleton based on Visicut Inkscape Plugin :
 Copyright (C) 2012 Thomas Oster, thomas.oster@rwth-aachen.de
@@ -22,23 +23,40 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 '''
 
+# The source code is a horrible mess. I apologize for your inconvenience, but hope that it still helps. Feel free to improve :-)
+
+
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
+from builtins import open
+from builtins import map
+from builtins import str
+from builtins import range
 import sys
 import os
 from subprocess import Popen
 import subprocess
 import shutil
 import numpy
+from functools import reduce
+try:
+    from functools import lru_cache
+except ImportError:
+    def lru_cache():
+        def wrapper(func):
+            return func
+        return wrapper
+import tempfile
+
+DEVNULL = open(os.devnull, 'w')
 
 def debug(s):
 	sys.stderr.write(s+"\n");
-selectedElements=[]
-for arg in sys.argv[1:]:
- if arg[0] == "-":
-  if len(arg) >= 5 and arg[0:5] == "--id=":
-   selectedElements +=[arg[5:]]
- else:
-  filename = arg
 
+# copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
 def which(program, extraPaths=[], subdir=None):
     """
     find program in the $PATH environment variable and in $extraPaths.
@@ -59,37 +77,92 @@ def which(program, extraPaths=[], subdir=None):
       if is_exe(exe_file):
         return exe_file
     raise Exception("Cannot find " + str(program) + " in any of these paths: " + str(pathlist) + ". Either the program is not installed, PATH is not set correctly, or this is a bug.")
-    
 
+# mostly copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
+@lru_cache()
+def inkscape_version():
+    """determine if Inkscape is version 0 or 1"""
+    version = subprocess.check_output([INKSCAPEBIN, "--version"],  stderr=DEVNULL).decode('ASCII', 'ignore')
+    assert version.startswith("Inkscape ")
+    if version.startswith("Inkscape 0"):
+        return 0
+    else:
+        return 1
+    
+# copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
 # Strip SVG to only contain selected elements, convert objects to paths, unlink clones
-# This code was simply copied from the VisiCut inkscape-plugin. Some parts may be unnecessary, but as long as it works, I don't care.
 # Inkscape version: takes care of special cases where the selected objects depend on non-selected ones.
 # Examples are linked clones, flowtext limited to a shape and linked flowtext boxes (overflow into the next box).
 #
 # Inkscape is called with certain "verbs" (gui actions) to do the required cleanup
 # The idea is similar to http://bazaar.launchpad.net/~nikitakit/inkscape/svg2sif/view/head:/share/extensions/synfig_prepare.py#L181 , but more primitive - there is no need for more complicated preprocessing here
-def stripSVG_inkscape(src,dest,elements):
- # Selection commands: select items, invert selection, delete
-    selection=[]
-    for el in elements:
-        selection += ["--select="+el]
-    if len(elements)>0:
-        #selection += ["--verb=FitCanvasToSelection"] # TODO add a user configuration option whether to keep the page size (and by this the position relative to the page)
-        selection += ["--verb=EditInvertInAllLayers","--verb=EditDelete"]
+def stripSVG_inkscape(src, dest, elements):    
+    # create temporary file for opening with inkscape.
+    # delete this file later so that it will disappear from the "recently opened" list.
+    tmpfile = tempfile.NamedTemporaryFile(delete=False, prefix='temp-visicut-', suffix='.svg')
+    tmpfile.close()
+    tmpfile = tmpfile.name
     import shutil
-    shutil.copyfile(src, dest)
-    hidegui=["--without-gui"]
-    # currently this only works with gui  because of a bug in inkscape: https://bugs.launchpad.net/inkscape/+bug/843260
-    hidegui=[]
-     
-    command = [INKSCAPEBIN]+hidegui+[dest,"--verb=UnlockAllInAllLayers","--verb=UnhideAllInAllLayers"] + selection + ["--verb=EditSelectAllInAllLayers","--verb=EditUnlinkClone","--verb=ObjectToPath","--verb=FileSave","--verb=FileQuit"]
-    inkscape_output="(not yet run)"
+    shutil.copyfile(src, tmpfile)
+
+
+    if inkscape_version() == 0:
+        # inkscape 0.92 long-term-support release. Will be in Linux distributions until 2025 or so
+        # Selection commands: select items, invert selection, delete
+        selection = []
+        for el in elements:
+            selection += ["--select=" + el]
+
+        if len(elements) > 0:
+            # selection += ["--verb=FitCanvasToSelection"] # TODO add a user configuration option whether to keep the page size (and by this the position relative to the page)
+            selection += ["--verb=EditInvertInAllLayers", "--verb=EditDelete"]
+
+
+        hidegui = ["--without-gui"]
+
+        # currently this only works with gui because of a bug in inkscape: https://bugs.launchpad.net/inkscape/+bug/843260
+        hidegui = []
+
+        command = [INKSCAPEBIN] + hidegui + [tmpfile, "--verb=UnlockAllInAllLayers", "--verb=UnhideAllInAllLayers"] + selection + ["--verb=EditSelectAllInAllLayers", "--verb=EditUnlinkClone", "--verb=ObjectToPath", "--verb=FileSave", "--verb=FileQuit"]
+    else:
+        # Inkscape 1.0, to be released ca 2020
+        # inkscape --select=... --verbs=...
+        # (see inkscape --help, inkscape --verb-list)
+        command = [INKSCAPEBIN, tmpfile, "--batch-process"]
+        verbs = ["ObjectToPath", "UnlockAllInAllLayers"]
+        if elements: # something is selected
+            # --select=object1,object2,object3,...
+            command += ["--select=" + ",".join(elements)]
+        else:
+            verbs += ["EditSelectAllInAllLayers"]
+        verbs += ["UnhideAllInAllLayers", "EditInvertInAllLayers", "EditDelete", "EditSelectAllInAllLayers", "EditUnlinkClone", "ObjectToPath", "FileSave"]
+        # --verb=action1;action2;...
+        command += ["--verb=" + ";".join(verbs)]
+        
+        
+        DEBUG = False
+        if DEBUG:
+            # Inkscape sometimes silently ignores wrong verbs, so we need to double-check that everything's right
+            for verb in verbs:
+                verb_list = [line.split(":")[0] for line in subprocess.check_output([INKSCAPEBIN, "--verb-list"], stderr=DEVNULL).split("\n")]
+                if verb not in verb_list:
+                    sys.stderr.write("Inkscape does not have the verb '{}'. Please report this as a VisiCut bug.".format(verb))
+        
+    inkscape_output = "(not yet run)"
     try:
+        #sys.stderr.write(" ".join(command))
         # run inkscape, buffer output
-        inkscape=subprocess.Popen(command, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-        inkscape_output=inkscape.communicate()[0]
+        inkscape = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        inkscape_output = inkscape.communicate()[0]
+        if inkscape.returncode != 0:
+            sys.stderr.write("Error: cleaning the document with inkscape failed. Something might still be shown in visicut, but it could be incorrect.\nInkscape's output was:\n" + inkscape_output)
     except:
         sys.stderr.write("Error: cleaning the document with inkscape failed. Something might still be shown in visicut, but it could be incorrect. Exception information: \n" + str(sys.exc_info()[0]) + "Inkscape's output was:\n" + inkscape_output)
+
+    # move output to the intended destination filename
+    os.rename(tmpfile, dest)
+
+
 
 
 # header
@@ -192,12 +265,12 @@ end restore
 %%EOF
 """
 
-def EPS2CutstudioEPS(src, dest):
+def EPS2CutstudioEPS(src, dest, mirror=False):
     def outputFromStack(stack, n, transformCoordinates=True):
         arr=stack[-(n+1):-1]
         if transformCoordinates:
             arrTransformed=[]
-            for i in range(n/2):
+            for i in range(n//2):
                 arrTransformed+=transform(arr[2*i], arr[2*i+1])
             return output(arrTransformed+[stack[-1]])
         else:
@@ -222,12 +295,14 @@ def EPS2CutstudioEPS(src, dest):
         [xx, yy]=transform(x, y)
         return output([str(xx), str(yy), "l"])
     def output(array):
-        array=map(str, array)
+        array=list(map(str, array))
         output=" ".join(array)
         #debug("OUTPUT: "+output)
         return output + "\n"
     stack=[]
     scalingStack=[numpy.matrix(numpy.identity(3))]
+    if mirror:
+        scalingStack.append(numpy.matrix(numpy.diag([-1, 1, 1])))
     lastMoveCoordinates=None
     outputStr=prefix
     inputFile=open(src)
@@ -285,13 +360,19 @@ def EPS2CutstudioEPS(src, dest):
 
 if os.name=="nt": # windows
 	INKSCAPEBIN = which("inkscape.exe", subdir="Inkscape")
-	INKSCAPEBIN_NOGUI = which("inkscape.com", subdir="Inkscape")
 else:
 	INKSCAPEBIN=which("inkscape")
-	INKSCAPEBIN_NOGUI = INKSCAPEBIN
 
 assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
-assert os.path.isfile(INKSCAPEBIN_NOGUI),  "cannot find inkscape binary " + INKSCAPEBIN_NOGUI
+
+selectedElements=[]
+for arg in sys.argv[1:]:
+    if arg[0] == "-":
+        if len(arg) >= 5 and arg[0:5] == "--id=":
+            selectedElements +=[arg[5:]]
+    else:
+        filename = arg
+
 
 if len(selectedElements)==0:
     shutil.copyfile(filename, filename+".filtered.svg")
@@ -299,19 +380,27 @@ else:
     # only take selected elements
     stripSVG_inkscape(src=filename, dest=filename+".filtered.svg", elements=selectedElements)
 
-#assert 0==subprocess.call([INKSCAPEBIN,"-z",filename+".orig.svg","-T", "--export-plain-svg="+filename+".plain.svg"]),  "plain-SVG conversion failed"
-#os.unlink(filename+".orig.svg")
-cmd = [INKSCAPEBIN_NOGUI,"-z",filename+".filtered.svg","-T", "--export-ignore-filters",  "--export-eps="+filename+".inkscape.eps"]
-assert 0 == subprocess.call(cmd), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
-#os.unlink(filename+".plain.svg")
-EPS2CutstudioEPS(filename+".inkscape.eps", filename+".cutstudio.eps")
+if inkscape_version() == 0:
+    # Inkscape 0.92.4
+    cmd = [INKSCAPEBIN,"-z",filename+".filtered.svg","-T", "--export-ignore-filters",  "--export-eps="+filename+".inkscape.eps"]
+else:
+    # Inkscape 1.0
+    cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
+inkscape_eps_file = filename + ".inkscape.eps"
+
+#print(" ".join(cmd), file=sys.stderr)
+assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
+assert os.path.exists(inkscape_eps_file), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
+
+EPS2CutstudioEPS(inkscape_eps_file, filename+".cutstudio.eps", mirror=("--mirror=true" in sys.argv))
 
 if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
     Popen([which("CutStudio\CutStudio.exe"), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
 else:
     #raise Exception("CutStudio on Mac and on Linux-Wine not yet supported, please open cutstudio yourself.")
-    Popen(["inkscape", filename+".filtered.svg"])
+    print("Your file was saved to:\n" + filename+".cutstudio.eps" + "\n Please open that with CutStudio.", file=sys.stderr)
+    # Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
     #Popen(["inkscape", filename+".cutstudio.eps"])
     pass
 #os.unlink(filename+".filtered.svg")

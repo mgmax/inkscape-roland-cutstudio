@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
-  <_name>Open in CutStudio</_name>
-  <id>roland_custudio.export</id>
+  <_name>Open in CutStudio (mirror horizontal ◢|◣)</_name>
+  <id>roland_custudio.export_mirrored</id>
   <dependency type="executable" location="extensions">roland_cutstudio.py</dependency>
-  <param name="mirror" type="boolean" gui-hidden="true">false</param> 
+  <param name="mirror" type="boolean" gui-hidden="true">true</param> 
   <effect needs-live-preview="false">
         <object-type>path</object-type>
         <effects-menu>
