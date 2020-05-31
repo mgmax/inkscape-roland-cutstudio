@@ -6,16 +6,19 @@ Usage:
 - Extensions - Roland CutStudio - Open in CutStudio
 
 
-Windows installing:
+Installing:
 
 checkout git repo or download the ZIP from https://github.com/mgmax/inkscape-roland-cutstudio/archive/master.zip
 
-Copy all roland_* files to the inkscape extension folder, C:\Program Files\Inkscape\share\extensions\   (or C:\Program Files (x86)\... on some systems)
+Copy all roland_* files to the inkscape extensions folder:
+- Per-user installation: The path is shown in Inkscape: Edit - Preferences - System - User extensions.
+- System-wide installation on Windows (not for "Inkscape Portable"): Use the existing "extensions" folder in Inkscape's installation, usually C:\Program Files\Inkscape\share\inkscape\extensions\ or ...\share\extensions\   (or C:\Program Files (x86)\... on some systems). 
 
-Install Roland CutStudio to the default path: "C:\Program Files\CutStudio" or "C:\Program Files (x86)\CutStudio"
+Then restart Inkscape.
 
-Mac / Linux+wine:
-Does not work yet, the paths need to be adjusted
+On Windows, install Roland CutStudio to the default path: "C:\Program Files\CutStudio" or "C:\Program Files (x86)\CutStudio"
+
+On Mac / Linux, the file is saved as .eps and you have to open CutStudio yourself or copy this file to another PC with CutStudio installed. (CutStudio does not work on Linux, maybe it does with Wine).
 
 KNOWN BUGS:
 CutStudio must be installed in default path - TODO read registry entry "HKLM\Software\Roland DG Corporation\CutStudio\Folder\Path"
