@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: GPL-2.0-or-later
 '''
 Roland CutStudio export script
@@ -42,6 +41,8 @@ import subprocess
 import shutil
 import numpy
 from functools import reduce
+import inkex
+
 try:
     from functools import lru_cache
 except ImportError:
@@ -57,7 +58,7 @@ def debug(s):
 	sys.stderr.write(s+"\n");
 
 # copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
-def which(program, extraPaths=[], subdir=None):
+def which(program, raiseError, extraPaths=[], subdir=None):
     """
     find program in the $PATH environment variable and in $extraPaths.
     If $subdir is given, also look in the given subdirectory of each $PATH entry.
@@ -76,7 +77,10 @@ def which(program, extraPaths=[], subdir=None):
       exe_file = os.path.join(path, program)
       if is_exe(exe_file):
         return exe_file
-    raise Exception("Cannot find " + str(program) + " in any of these paths: " + str(pathlist) + ". Either the program is not installed, PATH is not set correctly, or this is a bug.")
+    if raiseError:
+        raise Exception("Cannot find " + str(program) + " in any of these paths: " + str(pathlist) + ". Either the program is not installed, PATH is not set correctly, or this is a bug.")
+    else:
+        return None
 
 # mostly copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
 @lru_cache()
@@ -357,11 +361,12 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
     outputStr += postfix
     outputFile.write(outputStr)
     outputFile.close()
+    inputFile.close()
 
 if os.name=="nt": # windows
-	INKSCAPEBIN = which("inkscape.exe", subdir="Inkscape")
+	INKSCAPEBIN = which("inkscape.exe", True, subdir="Inkscape")
 else:
-	INKSCAPEBIN=which("inkscape")
+	INKSCAPEBIN=which("inkscape", True)
 
 assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
 
@@ -396,13 +401,16 @@ EPS2CutstudioEPS(inkscape_eps_file, filename+".cutstudio.eps", mirror=("--mirror
 
 if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
-    Popen([which("CutStudio\CutStudio.exe"), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
-else:
-    #raise Exception("CutStudio on Mac and on Linux-Wine not yet supported, please open cutstudio yourself.")
-    print("Your file was saved to:\n" + filename+".cutstudio.eps" + "\n Please open that with CutStudio.", file=sys.stderr)
-    # Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
-    #Popen(["inkscape", filename+".cutstudio.eps"])
-    pass
+    Popen([which("CutStudio\CutStudio.exe", True), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
+else: #check if we have access to "wine"
+    if which("wine", False) is not None:
+        with os.popen("wine /opt/CutStudio/CutStudio.exe /import T:\\\\" + filename.split('/tmp/')[1] + ".cutstudio.eps", "r") as cutstudio:
+            result = cutstudio.read()
+    else:
+        print("Your file was saved to:\n" + filename+".cutstudio.eps" + "\n Please open that with CutStudio.", file=sys.stderr)
+        #Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
+        #Popen(["inkscape", filename+".cutstudio.eps"])
+        pass
 #os.unlink(filename+".filtered.svg")
 #os.unlink(filename)
 #os.unlink(filename+".cutstudio.eps")
