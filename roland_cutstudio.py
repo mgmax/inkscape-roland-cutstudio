@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 '''
 
 # The source code is a horrible mess. I apologize for your inconvenience, but hope that it still helps. Feel free to improve :-)
-
+# Keep everything python2 compatible as long as people out there are using Inkscape <= 0.92.4!
 
 from __future__ import division
 from __future__ import print_function
@@ -42,6 +42,8 @@ import subprocess
 import shutil
 import numpy
 from functools import reduce
+import atexit
+import filecmp
 try:
     from functools import lru_cache
 except ImportError:
@@ -52,6 +54,7 @@ except ImportError:
 import tempfile
 
 DEVNULL = open(os.devnull, 'w')
+atexit.register(DEVNULL.close)
 
 def debug(s):
 	sys.stderr.write(s+"\n");
@@ -277,32 +280,40 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
             return output(arr+[stack[-1]])
     def transform(x, y):
         #debug("trafo from: {} {}".format(x, y))
-        p=numpy.matrix([[float(x),float(y),1]]).transpose()
-        multiply = lambda a, b: a*b
+        p=numpy.array([[float(x),float(y),1]]).transpose()
+        multiply = lambda a, b: numpy.matmul(a, b)
         # concatenate transformations by multiplying: new = transformation x previousTransformtaion
         m=reduce(multiply, scalingStack[::-1])
         m=m.transpose()
         #debug("with {}".format(m))
-        pnew=m*p
+        pnew = numpy.matmul(m, p)
         x=float(pnew[0])
         y=float(pnew[1])
         #debug("to: {} {}".format(x, y))
         return [x, y]
+    def toString(v):
+        """
+        like str(), but gives the exact same output for floats across python2 and python3
+        """
+        if isinstance(v, (type(float()), type(int()))):
+            return repr(v)
+        else:
+            return str(v)
     def outputMoveto(x, y):
         [xx, yy]=transform(x, y)
-        return output([str(xx), str(yy), "m"])
+        return output([toString(xx), toString(yy), "m"])
     def outputLineto(x, y):
         [xx, yy]=transform(x, y)
-        return output([str(xx), str(yy), "l"])
+        return output([toString(xx), toString(yy), "l"])
     def output(array):
-        array=list(map(str, array))
+        array=list(map(toString, array))
         output=" ".join(array)
         #debug("OUTPUT: "+output)
         return output + "\n"
     stack=[]
-    scalingStack=[numpy.matrix(numpy.identity(3))]
+    scalingStack=[numpy.identity(3)]
     if mirror:
-        scalingStack.append(numpy.matrix(numpy.diag([-1, 1, 1])))
+        scalingStack.append(numpy.diag([-1, 1, 1]))
     lastMoveCoordinates=None
     outputStr=prefix
     inputFile=open(src)
@@ -338,11 +349,11 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
                     outputStr += outputLineto(x, y+dy)
                     outputStr += outputLineto(x, y)
             elif item=="cm": # matrix transformation
-                newTrafo=numpy.matrix([[float(stack[-7]), float(stack[-6]), 0], [float(stack[-5]), float(stack[-4]), 0], [float(stack[-3]), float(stack[-2]), 1]])
+                newTrafo=numpy.array([[float(stack[-7]), float(stack[-6]), 0], [float(stack[-5]), float(stack[-4]), 0], [float(stack[-3]), float(stack[-2]), 1]])
                 #debug("applying trafo "+str(newTrafo))
-                scalingStack[-1]*=newTrafo
+                scalingStack[-1] = numpy.matmul(scalingStack[-1], newTrafo)
             elif item=="q": # save graphics state to stack
-                scalingStack.append(numpy.matrix(numpy.identity(3)))
+                scalingStack.append(numpy.identity(3))
             elif item=="Q": # pop graphics state from stack
                 scalingStack.pop()
             elif item in ["m", "l"]:
@@ -372,7 +383,8 @@ for arg in sys.argv[1:]:
             selectedElements +=[arg[5:]]
     else:
         filename = arg
-
+if "--selftest" in sys.argv:
+    filename = "./test-input.svg"
 
 if len(selectedElements)==0:
     shutil.copyfile(filename, filename+".filtered.svg")
@@ -392,14 +404,29 @@ inkscape_eps_file = filename + ".inkscape.eps"
 assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
 assert os.path.exists(inkscape_eps_file), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
 
-EPS2CutstudioEPS(inkscape_eps_file, filename+".cutstudio.eps", mirror=("--mirror=true" in sys.argv))
+
+if "--selftest" in sys.argv:
+    # used for unit-testing: fixed location of output file
+    destination = "./test-output-actual.cutstudio.eps"
+else:
+    # normally
+    destination = filename + ".cutstudio.eps"
+
+EPS2CutstudioEPS(inkscape_eps_file, destination, mirror=("--mirror=true" in sys.argv))
+
+if "--selftest" in sys.argv:
+    # unittest: compare with known reference output
+    TEST_REFERENCE_FILE = "./test-output-reference.cutstudio.eps"
+    assert filecmp.cmp(destination, TEST_REFERENCE_FILE), "Test output changed. Please compare " + destination + " and " + TEST_REFERENCE_FILE
+    print("Selftest successful :-)")
+    sys.exit(0)
 
 if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
-    Popen([which("CutStudio\CutStudio.exe"), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
+    Popen([which("CutStudio\CutStudio.exe"), "/import", destination], creationflags=DETACHED_PROCESS, close_fds=True)
 else:
     #raise Exception("CutStudio on Mac and on Linux-Wine not yet supported, please open cutstudio yourself.")
-    print("Your file was saved to:\n" + filename+".cutstudio.eps" + "\n Please open that with CutStudio.", file=sys.stderr)
+    print("Your file was saved to:\n" + destination + "\n Please open that with CutStudio.", file=sys.stderr)
     # Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
     #Popen(["inkscape", filename+".cutstudio.eps"])
     pass

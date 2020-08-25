@@ -27,10 +27,13 @@ WONTFIX: if there is any object with opacity != 100%, inkscape exports some obje
 WONTFIX: filters (e.g. blur) are not supported
 
 
+Contributing:
 
+I am sorry that the code is so horrible. If anyone feels the desire to burn everything and rewrite it from scratch, please feel free to do so.
+If you change the code, please make sure that `python2.7 roland_cutstudio.py --selftest` and `python3 roland_cutstudio.py --selftest` still work.
 
+Internal details:
 
-interna:
 CutStudio does not really interpret EPS like a real EPS reader should. It only has a crude parser that only works with the EPS-export from certain versions of Corel and Illustrator.
 
 It only knows these commands, one per line:
