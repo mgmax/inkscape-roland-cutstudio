@@ -393,7 +393,7 @@ else:
     cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
 inkscape_eps_file = filename + ".inkscape.eps"
 
-#print(" ".join(cmd), file=sys.stderr)
+#inkex.utils.debug(" ".join(cmd), file=sys.stderr)
 assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
 assert os.path.exists(inkscape_eps_file), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
 
@@ -404,13 +404,17 @@ if os.name=="nt":
     Popen([which("CutStudio\CutStudio.exe", True), "/import", filename+".cutstudio.eps"], creationflags=DETACHED_PROCESS, close_fds=True)
 else: #check if we have access to "wine"
     if which("wine", False) is not None:
-        with os.popen("wine /opt/CutStudio/CutStudio.exe /import T:\\\\" + filename.split('/tmp/')[1] + ".cutstudio.eps", "r") as cutstudio:
-            result = cutstudio.read()
+        if which("/opst/CutStudio/CutStudio.exe", False) is not None:
+            with os.popen("wine /opt/CutStudio/CutStudio.exe /import T:\\\\" + filename.split('/tmp/')[1] + ".cutstudio.eps", "r") as cutstudio:
+                result = cutstudio.read()
+        else:
+            inkex.utils.debug("Found a wine installation on your system but no CutStudio.exe. You can easily emulate this Windows application on Linux using wine. To do this provide a valid CutStudio installation in directory \"/opt/CutStudio/\". You may create a symlink with the shell command \"ln -sf /your/path/to/cutstudio /opt/CutStudio\" to point to this dir, or just edit the InkScape extension source code. As second step you need to configure the drive letter T: to point to the directory \"/tmp/\". This is done with a few mouse clicks within the \"winecfg\" utility. The wine emulation was tested to work properly with Roland CutStudio version 3.10. For now your file was saved to:\n" + filename + ".cutstudio.eps")
+            #os.popen("/usr/bin/xdg-open " + filename)
     else:
-        print("Your file was saved to:\n" + filename+".cutstudio.eps" + "\n Please open that with CutStudio.", file=sys.stderr)
+        inkex.utils.debug("Your file was saved to:\n" + filename + ".cutstudio.eps" + "\n Please open that with CutStudio.")
+        #os.popen("/usr/bin/xdg-open " + filename)
         #Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
         #Popen(["inkscape", filename+".cutstudio.eps"])
-        pass
 #os.unlink(filename+".filtered.svg")
 #os.unlink(filename)
 #os.unlink(filename+".cutstudio.eps")
