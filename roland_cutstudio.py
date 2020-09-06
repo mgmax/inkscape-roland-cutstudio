@@ -43,8 +43,14 @@ import numpy
 from functools import reduce
 import atexit
 import filecmp
-from pathlib import Path
-import inkex
+try:
+    from pathlib import Path
+except ImportError:
+    # Workaround for Python < 3.5
+    class fakepath:
+        def home(self):
+            return os.path.expanduser("~")
+    Path = fakepath()
 try:
     from functools import lru_cache
 except ImportError:
@@ -57,8 +63,10 @@ import tempfile
 DEVNULL = open(os.devnull, 'w')
 atexit.register(DEVNULL.close)
 
+def message(s):
+	sys.stderr.write(s+"\n")
 def debug(s):
-	sys.stderr.write(s+"\n");
+    message(s)
 
 # copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
 def which(program, raiseError, extraPaths=[], subdir=None):
@@ -406,7 +414,7 @@ else:
     cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
 inkscape_eps_file = filename + ".inkscape.eps"
 
-#inkex.utils.debug(" ".join(cmd), file=sys.stderr)
+#debug(" ".join(cmd))
 assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
 assert os.path.exists(inkscape_eps_file), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
 
@@ -431,17 +439,21 @@ if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
     Popen([which("CutStudio\CutStudio.exe", True), "/import", destination], creationflags=DETACHED_PROCESS, close_fds=True)
 else: #check if we have access to "wine"
-    if which("wine", False) is not None:
-        if which("CutStudio.exe", False, [str(Path.home()) + "/.wine/drive_c/Program Files (x86)/CutStudio"]) is not None:
-            shutil.copyfile(destination, str(Path.home()) + "/.wine/drive_c/cutstudio.eps")
-            inkex.utils.debug(str(Path.home()) + "/.wine/drive_c/'Program Files (x86)'/CutStudio/CutStudio.exe /import C:\\cutstudio.eps")
-            with os.popen("wine " + str(Path.home()) + "/.wine/drive_c/'Program Files (x86)'/CutStudio/CutStudio.exe /import C:\\cutstudio.eps", "r") as cutstudio:
-                result = cutstudio.read()
-        else:
-            inkex.utils.debug("Found a wine installation on your system but no CutStudio.exe. You can easily emulate this Windows application on Linux using wine. To do this provide a valid CutStudio installation in directory \"$HOME/.wine/drive_c/'Program Files (x86)'/CutStudio/CutStudio.exe\". The wine emulation was tested to work properly with Roland CutStudio version 3.10. For now your file was saved to:\n" + filename + ".cutstudio.eps")
-            #os.popen("/usr/bin/xdg-open " + filename)
-    else:
-        inkex.utils.debug("Your file was saved to:\n" + filename + ".cutstudio.eps" + "\n Please open that with CutStudio manually. Tip: install wine on your system and use it to install CutStudio on Linux. This InkScape extension will automatically detect it. It allows you to directly import the exported InkScape file into CutStudio.")
+    CUTSTUDIO_C_DRIVE = str(Path.home()) + "/.wine/drive_c/"
+    CUTSTUDIO_EXE_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
+    CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_EXE_LINUX_WINE, "/import", r'C:\cutstudio.eps']
+    try:
+        if not which("wine", False):
+            raise Exception("Cannot find 'wine'")
+        if not os.path.exists(CUTSTUDIO_PATH_LINUX_WINE):
+            raise Exception("Cannot find CutStudio in " + CUTSTUDIO_PATH_LINUX_WINE)
+        shutil.copyfile(destination, CUTSTUDIO_C_DRIVE + "cutstudio.eps")
+        subprocess.check_call(CUTSTUDIO_COMMANDLINE)
+    except Exception as exc:
+        message("Could not open CutStudio.\nInstead, your file was saved to:\n" + destination + "\n" + \
+            "Please open that with CutStudio manually. \n\n" + \
+            "Tip: On Linux, you can use 'wine' to install CutStudio 3.10. Then, the file will be directly opened with CutStudio. \n" + \
+            " Diagnostic information: \n" + str(exc))
         #os.popen("/usr/bin/xdg-open " + filename)
         #Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
         #Popen(["inkscape", filename+".cutstudio.eps"])
