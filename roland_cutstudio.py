@@ -440,8 +440,8 @@ if os.name=="nt":
     Popen([which("CutStudio\CutStudio.exe", True), "/import", destination], creationflags=DETACHED_PROCESS, close_fds=True)
 else: #check if we have access to "wine"
     CUTSTUDIO_C_DRIVE = str(Path.home()) + "/.wine/drive_c/"
-    CUTSTUDIO_EXE_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
-    CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_EXE_LINUX_WINE, "/import", r'C:\cutstudio.eps']
+    CUTSTUDIO_PATH_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
+    CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_PATH_LINUX_WINE, "/import", r'C:\cutstudio.eps']
     try:
         if not which("wine", False):
             raise Exception("Cannot find 'wine'")
