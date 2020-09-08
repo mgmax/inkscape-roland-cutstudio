@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: GPL-2.0-or-later
 '''
 Roland CutStudio export script
@@ -45,6 +44,14 @@ from functools import reduce
 import atexit
 import filecmp
 try:
+    from pathlib import Path
+except ImportError:
+    # Workaround for Python < 3.5
+    class fakepath:
+        def home(self):
+            return os.path.expanduser("~")
+    Path = fakepath()
+try:
     from functools import lru_cache
 except ImportError:
     def lru_cache():
@@ -56,11 +63,13 @@ import tempfile
 DEVNULL = open(os.devnull, 'w')
 atexit.register(DEVNULL.close)
 
+def message(s):
+	sys.stderr.write(s+"\n")
 def debug(s):
-	sys.stderr.write(s+"\n");
+    message(s)
 
 # copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
-def which(program, extraPaths=[], subdir=None):
+def which(program, raiseError, extraPaths=[], subdir=None):
     """
     find program in the $PATH environment variable and in $extraPaths.
     If $subdir is given, also look in the given subdirectory of each $PATH entry.
@@ -71,6 +80,7 @@ def which(program, extraPaths=[], subdir=None):
         pathlist.append(os.environ.get("ProgramFiles(x86)","C:\Program Files (x86)\\"))
         pathlist.append("C:\Program Files\\") # needed for 64bit inkscape on 64bit Win7 machines
         pathlist.append(os.path.dirname(os.path.dirname(os.getcwd()))) # portable application in the current directory
+    pathlist += extraPaths
     if subdir:
         pathlist = [os.path.join(p, subdir) for p in pathlist] + pathlist
     def is_exe(fpath):
@@ -79,7 +89,10 @@ def which(program, extraPaths=[], subdir=None):
       exe_file = os.path.join(path, program)
       if is_exe(exe_file):
         return exe_file
-    raise Exception("Cannot find " + str(program) + " in any of these paths: " + str(pathlist) + ". Either the program is not installed, PATH is not set correctly, or this is a bug.")
+    if raiseError:
+        raise Exception("Cannot find " + str(program) + " in any of these paths: " + str(pathlist) + ". Either the program is not installed, PATH is not set correctly, or this is a bug.")
+    else:
+        return None
 
 # mostly copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
 @lru_cache()
@@ -368,11 +381,12 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
     outputStr += postfix
     outputFile.write(outputStr)
     outputFile.close()
+    inputFile.close()
 
 if os.name=="nt": # windows
-	INKSCAPEBIN = which("inkscape.exe", subdir="Inkscape")
+	INKSCAPEBIN = which("inkscape.exe", True, subdir="Inkscape")
 else:
-	INKSCAPEBIN=which("inkscape")
+	INKSCAPEBIN=which("inkscape", True)
 
 assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
 
@@ -400,7 +414,7 @@ else:
     cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
 inkscape_eps_file = filename + ".inkscape.eps"
 
-#print(" ".join(cmd), file=sys.stderr)
+#debug(" ".join(cmd))
 assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
 assert os.path.exists(inkscape_eps_file), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
 
@@ -423,13 +437,26 @@ if "--selftest" in sys.argv:
 
 if os.name=="nt":
     DETACHED_PROCESS = 8 # start as "daemon"
-    Popen([which("CutStudio\CutStudio.exe"), "/import", destination], creationflags=DETACHED_PROCESS, close_fds=True)
-else:
-    #raise Exception("CutStudio on Mac and on Linux-Wine not yet supported, please open cutstudio yourself.")
-    print("Your file was saved to:\n" + destination + "\n Please open that with CutStudio.", file=sys.stderr)
-    # Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
-    #Popen(["inkscape", filename+".cutstudio.eps"])
-    pass
+    Popen([which("CutStudio\CutStudio.exe", True), "/import", destination], creationflags=DETACHED_PROCESS, close_fds=True)
+else: #check if we have access to "wine"
+    CUTSTUDIO_C_DRIVE = str(Path.home()) + "/.wine/drive_c/"
+    CUTSTUDIO_PATH_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
+    CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_PATH_LINUX_WINE, "/import", r'C:\cutstudio.eps']
+    try:
+        if not which("wine", False):
+            raise Exception("Cannot find 'wine'")
+        if not os.path.exists(CUTSTUDIO_PATH_LINUX_WINE):
+            raise Exception("Cannot find CutStudio in " + CUTSTUDIO_PATH_LINUX_WINE)
+        shutil.copyfile(destination, CUTSTUDIO_C_DRIVE + "cutstudio.eps")
+        subprocess.check_call(CUTSTUDIO_COMMANDLINE)
+    except Exception as exc:
+        message("Could not open CutStudio.\nInstead, your file was saved to:\n" + destination + "\n" + \
+            "Please open that with CutStudio manually. \n\n" + \
+            "Tip: On Linux, you can use 'wine' to install CutStudio 3.10. Then, the file will be directly opened with CutStudio. \n" + \
+            " Diagnostic information: \n" + str(exc))
+        #os.popen("/usr/bin/xdg-open " + filename)
+        #Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
+        #Popen(["inkscape", filename+".cutstudio.eps"])
 #os.unlink(filename+".filtered.svg")
 #os.unlink(filename)
 #os.unlink(filename+".cutstudio.eps")
