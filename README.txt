@@ -16,12 +16,15 @@ Copy all roland_* files to the inkscape extensions folder:
 
 Then restart Inkscape.
 
-On Windows, install Roland CutStudio to the default path: "C:\Program Files\CutStudio" or "C:\Program Files (x86)\CutStudio"
+Install CutStudio:
+- On Windows, you must install Roland CutStudio to the default path: "C:\Program Files\CutStudio" or "C:\Program Files (x86)\CutStudio"
+- On Linux, CutStudio is not required, but you may optionally install CutStudio via WINE. Note that you probably (?) cannot print from CutStudio under WINE, you can only look at the file.
+- On Mac, CutStudio is not required. The Plugin does not yet support it.
 
-On Mac / Linux, the file is saved as .eps and you have to open CutStudio yourself or copy this file to another PC with CutStudio installed. (CutStudio does not work on Linux, maybe it does with Wine).
+Using without CutStudio:
+On Mac or on Linux without CutStudio, the file is saved as .eps and you have to open CutStudio yourself or copy this file to another PC with CutStudio installed. 
 
 KNOWN BUGS:
-CutStudio must be installed in default path - TODO read registry entry "HKLM\Software\Roland DG Corporation\CutStudio\Folder\Path"
 WONTFIX: clipping of paths doesnt work
 WONTFIX: if there is any object with opacity != 100%, inkscape exports some objects as bitmaps. They will disappear in CutStudio!
 WONTFIX: filters (e.g. blur) are not supported
