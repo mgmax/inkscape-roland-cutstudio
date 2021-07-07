@@ -26,7 +26,7 @@ On Mac or on Linux without CutStudio, the file is saved as .eps and you have to 
 
 KNOWN BUGS:
 WONTFIX: clipping of paths doesnt work
-WONTFIX: if there is any object with opacity != 100%, inkscape exports some objects as bitmaps. They will disappear in CutStudio!
+WONTFIX: if there is any object with opacity != 100%, inkscape exports some objects as bitmaps. They will disappear in CutStudio! The same problem also occurs if the alpha value of stroke or fill color is not 100%.
 WONTFIX: filters (e.g. blur) are not supported
 
 
