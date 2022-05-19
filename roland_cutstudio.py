@@ -116,7 +116,7 @@ def stripSVG_inkscape(src, dest, elements):
         actions += ["select-all:all"]
     actions += ["unhide-all", "select-invert:all", "delete", "select-all:all", "clone-unlink", "object-to-path", "FileSave"] # there's no action for FileSave, so use the old verb here.
     # --action=action1;action2;...
-    command += ["--action=" + ";".join(actions)]
+    command += ["--actions=" + ";".join(actions)]
     
     
     DEBUG = False
