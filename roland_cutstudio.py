@@ -51,13 +51,6 @@ except ImportError:
         def home(self):
             return os.path.expanduser("~")
     Path = fakepath()
-try:
-    from functools import lru_cache
-except ImportError:
-    def lru_cache():
-        def wrapper(func):
-            return func
-        return wrapper
 import tempfile
 
 DEVNULL = open(os.devnull, 'w')
@@ -94,23 +87,12 @@ def which(program, raiseError, extraPaths=[], subdir=None):
     else:
         return None
 
-# mostly copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
-@lru_cache()
-def inkscape_version():
-    """determine if Inkscape is version 0 or 1"""
-    version = subprocess.check_output([INKSCAPEBIN, "--version"],  stderr=DEVNULL).decode('ASCII', 'ignore')
-    assert version.startswith("Inkscape ")
-    if version.startswith("Inkscape 0"):
-        return 0
-    else:
-        return 1
-    
 # copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
 # Strip SVG to only contain selected elements, convert objects to paths, unlink clones
 # Inkscape version: takes care of special cases where the selected objects depend on non-selected ones.
 # Examples are linked clones, flowtext limited to a shape and linked flowtext boxes (overflow into the next box).
 #
-# Inkscape is called with certain "verbs" (gui actions) to do the required cleanup
+# Inkscape is called with certain "actions" to do the required cleanup
 # The idea is similar to http://bazaar.launchpad.net/~nikitakit/inkscape/svg2sif/view/head:/share/extensions/synfig_prepare.py#L181 , but more primitive - there is no need for more complicated preprocessing here
 def stripSVG_inkscape(src, dest, elements):    
     # create temporary file for opening with inkscape.
@@ -122,47 +104,28 @@ def stripSVG_inkscape(src, dest, elements):
     shutil.copyfile(src, tmpfile)
 
 
-    if inkscape_version() == 0:
-        # inkscape 0.92 long-term-support release. Will be in Linux distributions until 2025 or so
-        # Selection commands: select items, invert selection, delete
-        selection = []
-        for el in elements:
-            selection += ["--select=" + el]
-
-        if len(elements) > 0:
-            # selection += ["--verb=FitCanvasToSelection"] # TODO add a user configuration option whether to keep the page size (and by this the position relative to the page)
-            selection += ["--verb=EditInvertInAllLayers", "--verb=EditDelete"]
-
-
-        hidegui = ["--without-gui"]
-
-        # currently this only works with gui because of a bug in inkscape: https://bugs.launchpad.net/inkscape/+bug/843260
-        hidegui = []
-
-        command = [INKSCAPEBIN] + hidegui + [tmpfile, "--verb=UnlockAllInAllLayers", "--verb=UnhideAllInAllLayers"] + selection + ["--verb=EditSelectAllInAllLayers", "--verb=EditUnlinkClone", "--verb=ObjectToPath", "--verb=FileSave", "--verb=FileQuit"]
+    # Updated for Inkscape 1.2, released 16 May 2022
+    # inkscape --select=... --actions=...
+    # (see inkscape --help, inkscape --action-list)
+    command = [INKSCAPEBIN, tmpfile, "--batch-process"]
+    actions = ["object-to-path", "unlock-all"]
+    if elements: # something is selected
+        # --select=object1,object2,object3,...
+        command += ["--select=" + ",".join(elements)]
     else:
-        # Inkscape 1.0, to be released ca 2020
-        # inkscape --select=... --verbs=...
-        # (see inkscape --help, inkscape --verb-list)
-        command = [INKSCAPEBIN, tmpfile, "--batch-process"]
-        verbs = ["ObjectToPath", "UnlockAllInAllLayers"]
-        if elements: # something is selected
-            # --select=object1,object2,object3,...
-            command += ["--select=" + ",".join(elements)]
-        else:
-            verbs += ["EditSelectAllInAllLayers"]
-        verbs += ["UnhideAllInAllLayers", "EditInvertInAllLayers", "EditDelete", "EditSelectAllInAllLayers", "EditUnlinkClone", "ObjectToPath", "FileSave"]
-        # --verb=action1;action2;...
-        command += ["--verb=" + ";".join(verbs)]
-        
-        
-        DEBUG = False
-        if DEBUG:
-            # Inkscape sometimes silently ignores wrong verbs, so we need to double-check that everything's right
-            for verb in verbs:
-                verb_list = [line.split(":")[0] for line in subprocess.check_output([INKSCAPEBIN, "--verb-list"], stderr=DEVNULL).split("\n")]
-                if verb not in verb_list:
-                    sys.stderr.write("Inkscape does not have the verb '{}'. Please report this as a VisiCut bug.".format(verb))
+        actions += ["select-all:all"]
+    actions += ["unhide-all", "select-invert:all", "delete", "select-all:all", "clone-unlink", "object-to-path", "FileSave"] # there's no action for FileSave, so use the old verb here.
+    # --action=action1;action2;...
+    command += ["--action=" + ";".join(actions)]
+    
+    
+    DEBUG = False
+    if DEBUG:
+        # Inkscape sometimes silently ignores wrong verbs, so we need to double-check that everything's right
+        for action in actions:
+            aciton_list = [line.split(":")[0] for line in subprocess.check_output([INKSCAPEBIN, "--action-list"], stderr=DEVNULL).split("\n")]
+            if action not in action_list:
+                sys.stderr.write("Inkscape does not have the action '{}'. Please report this as a VisiCut bug.".format(action))
         
     inkscape_output = "(not yet run)"
     try:
@@ -406,12 +369,7 @@ else:
     # only take selected elements
     stripSVG_inkscape(src=filename, dest=filename+".filtered.svg", elements=selectedElements)
 
-if inkscape_version() == 0:
-    # Inkscape 0.92.4
-    cmd = [INKSCAPEBIN,"-z",filename+".filtered.svg","-T", "--export-ignore-filters",  "--export-eps="+filename+".inkscape.eps"]
-else:
-    # Inkscape 1.0
-    cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
+cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
 inkscape_eps_file = filename + ".inkscape.eps"
 
 #debug(" ".join(cmd))
