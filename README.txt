@@ -10,6 +10,8 @@ Installing:
 
 checkout git repo or download the ZIP from https://github.com/mgmax/inkscape-roland-cutstudio/archive/master.zip
 
+For use with older Inkscape versions, old versions can be found in https://github.com/mgmax/inkscape-roland-cutstudio/releases . The install instructions for old versions may be different, see the README file in the ZIP file.
+
 Copy all roland_* files to the inkscape extensions folder:
 - Per-user installation: The path is shown in Inkscape: Edit - Preferences - System - User extensions.
 - System-wide installation on Windows (not for "Inkscape Portable"): Use the existing "extensions" folder in Inkscape's installation, usually C:\Program Files\Inkscape\share\inkscape\extensions\ or ...\share\extensions\   (or C:\Program Files (x86)\... on some systems). 
