@@ -107,14 +107,13 @@ def stripSVG_inkscape(src, dest, elements):
     # Updated for Inkscape 1.2, released 16 May 2022
     # inkscape --select=... --actions=...
     # (see inkscape --help, inkscape --action-list)
-    command = [INKSCAPEBIN, tmpfile, "--batch-process"]
-    actions = ["object-to-path", "unlock-all"]
+    command = [INKSCAPEBIN, tmpfile, "--export-overwrite"]
+    actions = []
     if elements: # something is selected
-        # --select=object1,object2,object3,...
-        command += ["--select=" + ",".join(elements)]
-    else:
-        actions += ["select-all:all"]
-    actions += ["unhide-all", "select-invert:all", "delete", "select-all:all", "clone-unlink", "object-to-path", "FileSave"] # there's no action for FileSave, so use the old verb here.
+        # select-by-id:object1,object2,object3,...
+        actions += ["select-by-id:" + ",".join(elements), "select-ungroup", "select-invert:all", "delete"]
+    actions += ["select-all:all", "clone-unlink", "object-to-path", "export-do"]
+
     # --action=action1;action2;...
     command += ["--actions=" + ";".join(actions)]
     
