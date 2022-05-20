@@ -105,13 +105,13 @@ def stripSVG_inkscape(src, dest, elements):
 
 
     # Updated for Inkscape 1.2, released 16 May 2022
-    # inkscape --select=... --actions=...
+    # inkscape --actions=...
     # (see inkscape --help, inkscape --action-list)
     command = [INKSCAPEBIN, tmpfile, "--export-overwrite"]
     actions = []
     if elements: # something is selected
         # select-by-id:object1,object2,object3,...
-        actions += ["select-by-id:" + ",".join(elements), "select-ungroup", "select-invert:all", "delete"]
+        actions += ["select-by-id:" + ",".join(elements), "select-ungroup", "select-invert", "delete"]
     actions += ["select-all:all", "clone-unlink", "object-to-path", "export-do"]
 
     # --action=action1;action2;...
