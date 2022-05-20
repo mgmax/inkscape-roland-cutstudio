@@ -111,7 +111,7 @@ def stripSVG_inkscape(src, dest, elements):
     actions = []
     if elements: # something is selected
         # select-by-id:object1,object2,object3,...
-        actions += ["select-by-id:" + ",".join(elements), "select-ungroup", "select-invert", "delete"]
+        actions += ["select-by-id:" + ",".join(elements), "select-invert:no-layers", "delete"]
     actions += ["select-all:all", "clone-unlink", "object-to-path", "export-do"]
 
     # --action=action1;action2;...
