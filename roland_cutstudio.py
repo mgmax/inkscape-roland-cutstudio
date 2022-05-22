@@ -266,22 +266,14 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
         y=float(pnew[1])
         #debug("to: {} {}".format(x, y))
         return [x, y]
-    def toString(v):
-        """
-        like str(), but gives the exact same output for floats across python2 and python3
-        """
-        if isinstance(v, (type(float()), type(int()))):
-            return repr(v)
-        else:
-            return str(v)
     def outputMoveto(x, y):
         [xx, yy]=transform(x, y)
-        return output([toString(xx), toString(yy), "m"])
+        return output([str(xx), str(yy), "m"])
     def outputLineto(x, y):
         [xx, yy]=transform(x, y)
-        return output([toString(xx), toString(yy), "l"])
+        return output([str(xx), str(yy), "l"])
     def output(array):
-        array=list(map(toString, array))
+        array=list(map(str, array))
         output=" ".join(array)
         #debug("OUTPUT: "+output)
         return output + "\n"
