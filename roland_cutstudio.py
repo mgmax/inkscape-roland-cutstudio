@@ -52,6 +52,8 @@ except ImportError:
             return os.path.expanduser("~")
     Path = fakepath()
 import tempfile
+import random
+import string
 
 DEVNULL = open(os.devnull, 'w')
 atexit.register(DEVNULL.close)
@@ -108,8 +110,36 @@ def stripSVG_inkscape(src, dest, elements):
     # inkscape --export-overwrite --actions=action1;action2...
     # (see inkscape --help, inkscape --action-list)
     # (for debugging, you can look at the intermediate state by running inkscape --with-gui --actions=... my_filename.svg)
-    actions = ["select-by-id:" + ",".join(elements), "select-invert", "delete", "select-all:all", "clone-unlink", "object-to-path", "export-do"]
+    # Note that it is (almost?) impossible to find a sequence that works in all cases.
+    # Cases to consider:
+    # - selecting whole groups
+    # - selecting objects within a group
+    # - selecting across groups/layers (e.g., enter group, select something, then Shift-click to select things from other layers)
+    # Difficulties with Inkscape:
+    # - "invert selection" does not behave as expected in all these cases,
+    #   for example if a group is selected then inverting can select the elements within.
+    # - Inkscape has a wonderful --export-id commandline switch, but it only works correctly with one ID
+
+    # Solution:
+    actions = []
+    # - select objects
+    actions += ["select-by-id:" + ",".join(elements)]
+    # - convert to path
+    actions +=  ["clone-unlink", "object-to-path"]
+    # - create group of selection
+    actions += ["selection-group"]
+    # - set group ID to a known value. Use a pseudo-random value to avoid collisions
+    target_group_id = "TARGET-GROUP-" + "".join(random.sample(string.ascii_lowercase, 20))
+    actions += ["object-set-attribute:id," + target_group_id]
+    # - set export options: use only the target group ID, nothing else
+    actions += ["export-id-only:true", "export-id:" + target_group_id]
+    # - export
+    actions += ["export-do"]
+
+
     command = [INKSCAPEBIN, tmpfile, "--export-overwrite", "--actions=" + ";".join(actions)]
+    # to print the resulting commandline:
+    # print(" ".join(["'" + c + "'" for c in command]), file=sys.stderr)
     
     
     DEBUG = False

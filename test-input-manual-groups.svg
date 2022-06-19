@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3-dev (1:1.2.0-alpha1+devel+202206160320+85e821bd4c)"
+   sodipodi:docname="3rect-testcase-manual.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.66101291"
+     inkscape:cx="717.83772"
+     inkscape:cy="560.50342"
+     inkscape:window-width="1848"
+     inkscape:window-height="898"
+     inkscape:window-x="72"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g3">
+      <rect
+         style="fill:#00ff00;stroke-width:0.264583"
+         id="rect1"
+         width="58.444729"
+         height="50.035328"
+         x="50.116997"
+         y="82.945969" />
+      <rect
+         style="fill:#ff0000;stroke-width:0.264583"
+         id="rect2"
+         width="40.022434"
+         height="44.030613"
+         x="58.923592"
+         y="55.331364" />
+      <rect
+         style="fill:#0000ff;stroke-width:0.264583"
+         id="rect3"
+         width="38.826317"
+         height="60.44075"
+         x="80.136772"
+         y="119.77328" />
+    </g>
+    <g
+       id="g3-5"
+       transform="translate(87.575029,15.116059)">
+      <rect
+         style="fill:#00ff00;stroke-width:0.264583"
+         id="rect1-3"
+         width="58.444729"
+         height="50.035328"
+         x="50.116997"
+         y="82.945969" />
+      <rect
+         style="fill:#ff0000;stroke-width:0.264583"
+         id="rect2-5"
+         width="40.022434"
+         height="44.030613"
+         x="58.923592"
+         y="55.331364" />
+      <rect
+         style="fill:#800080;stroke-width:0.264583"
+         id="rect3-6"
+         width="38.826317"
+         height="60.44075"
+         x="80.934181"
+         y="117.76975" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.02285px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.100572"
+       x="6.5645456"
+       y="7.9210792"
+       id="text2"><tspan
+         sodipodi:role="line"
+         id="tspan2"
+         style="stroke-width:0.100572"
+         x="6.5645456"
+         y="7.9210792">Manual test case, involving layers and groups</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.100572"
+         x="6.5645456"
+         y="12.94964"
+         id="tspan3">1. click multiple times on the <tspan
+   style="fill:#800080;stroke-width:0.100572"
+   id="tspan6">purple</tspan> rectangle until only it is selected (and not the whole group)</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.100572"
+         x="6.5645456"
+         y="17.978199"
+         id="tspan4">2. shift-click to select all <tspan
+   style="fill:#ffcc00;stroke-width:0.100572"
+   id="tspan7">yellow</tspan> objects</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.100572"
+         x="6.5645456"
+         y="23.00676"
+         id="tspan5">3. send to CutStudio, check that exactly these objects appear, and the size and shape is correct.</tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2">
+    <g
+       id="g3-2"
+       transform="translate(7.1299646,109.5817)">
+      <rect
+         style="fill:#00ff00;stroke-width:0.264583"
+         id="rect1-7"
+         width="58.444729"
+         height="50.035328"
+         x="50.116997"
+         y="82.945969" />
+      <rect
+         style="fill:#ff0000;stroke-width:0.264583"
+         id="rect2-0"
+         width="40.022434"
+         height="44.030613"
+         x="58.923592"
+         y="55.331364" />
+      <rect
+         style="fill:#0000ff;stroke-width:0.264583"
+         id="rect3-9"
+         width="38.826317"
+         height="60.44075"
+         x="80.136772"
+         y="119.77328" />
+    </g>
+    <path
+       sodipodi:type="spiral"
+       style="fill:none;fill-rule:evenodd;stroke:#ffcc00;stroke-width:2;stroke-dasharray:none"
+       id="path1"
+       sodipodi:cx="135.37979"
+       sodipodi:cy="213.43381"
+       sodipodi:expansion="1"
+       sodipodi:revolution="3"
+       sodipodi:radius="39.51218"
+       sodipodi:argument="-18.258572"
+       sodipodi:t0="0"
+       d="m 135.37979,213.43381 c 1.64507,1.10381 -0.6763,2.76211 -1.83461,2.73422 -3.13896,-0.0756 -4.38093,-3.83259 -3.63383,-6.40345 1.3364,-4.59866 6.8445,-6.19112 10.97228,-4.53343 6.05767,2.43273 8.0447,9.89357 5.43304,15.54111 -3.48094,7.52727 -12.95534,9.91615 -20.10994,6.33264 -9.00333,-4.50948 -11.79672,-16.02304 -7.23225,-24.67876 5.52819,-10.48324 19.09407,-13.68256 29.24759,-8.13186 11.96559,6.5413 15.57169,22.16715 9.03147,33.81642 -7.55094,13.44955 -25.24162,17.46301 -38.38526,9.93108 -14.93463,-8.55827 -19.355873,-28.31707 -10.83068,-42.95409 9.56399,-16.42053 31.39321,-21.24986 47.52292,-11.73029 17.90704,10.56854 23.14469,34.46989 12.6299,52.09175" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#ffcc00;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="166.58392"
+       y="245.45648"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="fill:#ffcc00;stroke-width:0.264583"
+         x="166.58392"
+         y="245.45648">Lololo</tspan></text>
+  </g>
+</svg>
