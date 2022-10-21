@@ -421,7 +421,7 @@ else: #check if we have access to "wine"
         if not os.path.exists(CUTSTUDIO_PATH_LINUX_WINE):
             raise Exception("Cannot find CutStudio in " + CUTSTUDIO_PATH_LINUX_WINE)
         shutil.copyfile(destination, CUTSTUDIO_C_DRIVE + "cutstudio.eps")
-        subprocess.check_call(CUTSTUDIO_COMMANDLINE)
+        subprocess.check_call(CUTSTUDIO_COMMANDLINE, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     except Exception as exc:
         message("Could not open CutStudio.\nInstead, your file was saved to:\n" + destination + "\n" + \
             "Please open that with CutStudio manually. \n\n" + \
