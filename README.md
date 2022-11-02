@@ -2,6 +2,10 @@
 
 [Inkscape][] plugin that converts SVG files to an EPS format that Roland's [CutStudio][] software can read.
 
+<!--p align="center">
+    <img alt="Illustration of Inkscape file and CutStudio output" src="images/no-cutstudio.png"/>
+</p-->
+
 [Inkscape]: https://www.inkscape.org/
 [CutStudio]: https://www.rolanddga.com/products/software/roland-cutstudio-software
 
@@ -16,12 +20,16 @@
 ### Using without CutStudio installed
 
 1. Follow the instructions above.
-2. Once the plugin has completed the export, you'll see an information screen that indicates where the EPS file has been saved. Copy this file to the computer that has CutStudio installed.
+2. Once the plugin has completed the export, you'll see a dialog box that indicates where the EPS file has been saved. Copy this file to the computer that has CutStudio installed.
 
-## Installation
+<p align="center">
+    <img alt="Dialog box presented when plugin is run and CutStudio is not installed" src="images/no-cutstudio.png"/>
+</p>
+
+## Installing
 
 1. Obtain files. This can be done by either cloning this repository, or [downloading the repository zip file][zip].
-2. Unzip (if required) and copy all files starting with 'roland\_' to the Inkscape Plugins directory.
+2. Unzip if required and copy all files starting with 'roland\_' to the Inkscape Plugins directory.
     a. Per-user installation: open Inkscape Preferences -> System, look for 'User Extensions' and click the 'Open' button.
     b. System-wide installation: further down the System preferences tab, the correct folder is listed under 'Inkscape extensions'
 3. Restart Inkscape.
@@ -30,25 +38,27 @@
 
 ### Installation notes
 
-- On Windows, CutStudio must be installed in the default path - `C:\Program Files\CutStudio` or `C:\Program Files (x86)\CutStudio`
+- On Windows, CutStudio must be installed in the default path - `C:\Program Files\CutStudio` or `C:\Program Files (x86)\CutStudio`.
 - CutStudio can be installed on Linux using WINE, but will probably not work for actually controlling Roland cutters.
 
 ### Inkscape versions < 1.2
 
-Inkscape 1.2 [replaced verbs with actions][1.2notes], changing the way this plugin works. If you're using a version of Inkscape earlier than 1.2 you can get older versions of this plugin from the [releases page][releases]. Note that installation instructions may be different, so please check the readme in the downloaded ZIP file.
+Inkscape 1.2 [replaced verbs with actions][1.2notes], changing the way this plugin works. If you're using a version of Inkscape earlier than 1.2 you can get older versions of this plugin from the [releases page][releases]. Note that the installation instructions may be different, so please check the readme in the downloaded ZIP file.
 
 [1.2notes]: https://wiki.inkscape.org/wiki/index.php/Release_notes/1.2#Command_line
 [releases]: https://github.com/mgmax/inkscape-roland-cutstudio/releases
 
 ## Known issues
 
-- Clipping of paths doesn't work.
+- Clipping of paths doesn't work. This can be worked around by using boolean operations to produce the actual path you want to cut before running the plugin.
 - If there are any objects with opacity less than 100%, Inkscape exports them as bitmaps and they will not appear in CutStudio. This also occurs if the alpha value of the stroke or fill color is less than 100%.
-- Filters (e.g. blur) are not supported.
+- Filters (e.g. blur) are also exported as bitmaps, so are not supported.
 
-## Contributing:
+These issues won't be fixed as there's a workaround for the first issue and CutStudio has no way of handling bitmaps.
 
-I am sorry that the code is so horrible. If anyone feels the desire to burn everything and rewrite it from scratch, please feel free to do so. If you're working with the code, please make sure that `python2.7 roland_cutstudio.py --selftest` and `python3 roland_cutstudio.py --selftest` work before submitting pull requests.
+## Contributing
+
+I am sorry that the code is so horrible. If anyone feels the desire to burn everything and rewrite it from scratch, please feel free to do so. If you're making changes to the code, please make sure that `python2.7 roland_cutstudio.py --selftest` and `python3 roland_cutstudio.py --selftest` work before you submit a pull request.
 
 ## Details
 
