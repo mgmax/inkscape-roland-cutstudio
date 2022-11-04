@@ -28,9 +28,9 @@ Follow the steps above. Once the plugin has completed the export, you'll see a d
 ## Installing
 
 1. Obtain the files by either cloning this repository or [downloading the repository zip file][zip].
-2. Unzip if required and copy all files starting with 'roland\_' to the appropriate Inkscape extensions folder:
-    a. For per-user installation: open Inkscape Preferences -> System, look for 'User Extensions' and click the 'Open' button.
-    b. To install system-wide: open the same preferences tab. The correct folder is listed further down under 'Inkscape extensions'.
+2. Unzip if required and copy all files starting with `roland\_` to the appropriate Inkscape extensions folder:
+    1. For per-user installation: open Inkscape Preferences -> System, look for 'User Extensions' and click the 'Open' button.
+    1. To install system-wide: open the same preferences tab. The correct folder is listed further down under 'Inkscape extensions'.
 3. Restart Inkscape.
 
 [zip]: https://github.com/mgmax/inkscape-roland-cutstudio/archive/refs/heads/master.zip
