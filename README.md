@@ -14,24 +14,23 @@
 ### Using with CutStudio installed
 
 1. Open Inkscape.
-2. Select the objects you'd like to export to CutStudio. If no objects are selected, everything in the file will be exported.
-3. Open the Extensions menu, then select Roland CutStudio -> Open in CutStudio. Selecting 'Open in CutStudio (mirrored)' will horizontally mirror all objects.
+2. Select the objects you want to export to CutStudio. If no objects are selected, everything in the file will be exported.
+3. Open the Extensions menu, then select Roland CutStudio -> Open in CutStudio. Selecting 'Open in CutStudio (mirror horizontal ◢|◣)' will horizontally mirror all objects.
 
 ### Using without CutStudio installed
 
-1. Follow the instructions above.
-2. Once the plugin has completed the export, you'll see a dialog box that indicates where the EPS file has been saved. Copy this file to the computer that has CutStudio installed.
+Follow the steps above. Once the plugin has completed the export, you'll see a dialog box that indicates where the EPS file has been saved. This file can be imported into CutStudio with File -> Import.
 
 <p align="center">
-    <img alt="Dialog box presented when plugin is run and CutStudio is not installed" src="images/no-cutstudio.png"/>
+    <img alt="Dialog box shown when plugin is run and CutStudio is not installed" src="images/no-cutstudio.png"/>
 </p>
 
 ## Installing
 
-1. Obtain files. This can be done by either cloning this repository, or [downloading the repository zip file][zip].
-2. Unzip if required and copy all files starting with 'roland\_' to the Inkscape Plugins directory.
-    a. Per-user installation: open Inkscape Preferences -> System, look for 'User Extensions' and click the 'Open' button.
-    b. System-wide installation: further down the System preferences tab, the correct folder is listed under 'Inkscape extensions'
+1. Obtain the files by either cloning this repository or [downloading the repository zip file][zip].
+2. Unzip if required and copy all files starting with 'roland\_' to the appropriate Inkscape extensions folder:
+    a. For per-user installation: open Inkscape Preferences -> System, look for 'User Extensions' and click the 'Open' button.
+    b. To install system-wide: open the same preferences tab. The correct folder is listed further down under 'Inkscape extensions'.
 3. Restart Inkscape.
 
 [zip]: https://github.com/mgmax/inkscape-roland-cutstudio/archive/refs/heads/master.zip
