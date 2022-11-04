@@ -22,7 +22,7 @@
 Follow the steps above. Once the plugin has completed the export, you'll see a dialog box that indicates where the EPS file has been saved. This file can be imported into CutStudio with File -> Import.
 
 <p align="center">
-    <img alt="Dialog box shown when plugin is run and CutStudio is not installed" src="images/no-cutstudio.png" width="600"/>
+    <img alt="Dialog box shown when plugin is run and CutStudio is not installed" src="images/no-cutstudio.png" width="425"/>
 </p>
 
 ## Installing
