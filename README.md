@@ -2,9 +2,9 @@
 
 [Inkscape][] plugin that converts SVG files to an EPS format that Roland's [CutStudio][] software can read.
 
-<!--p align="center">
-    <img alt="Illustration of Inkscape file and CutStudio output" src="images/no-cutstudio.png"/>
-</p-->
+<p align="center">
+    <img alt="Screenshot of Inkscape file and CutStudio output side by side" src="images/plugin-demo.png" width="600"/>
+</p>
 
 [Inkscape]: https://www.inkscape.org/
 [CutStudio]: https://www.rolanddga.com/products/software/roland-cutstudio-software
@@ -19,7 +19,7 @@
 
 ### Using without CutStudio installed
 
-Follow the steps above. Once the plugin has completed the export, you'll see a dialog box that indicates where the EPS file has been saved. This file can be imported into CutStudio with File -> Import.
+Follow the steps above. Once the plugin has completed the export, you'll see a dialog box (example shown below) that indicates where the EPS file has been saved. This file can be imported into CutStudio with File -> Import.
 
 <p align="center">
     <img alt="Dialog box shown when plugin is run and CutStudio is not installed" src="images/no-cutstudio.png" width="425"/>
@@ -29,8 +29,8 @@ Follow the steps above. Once the plugin has completed the export, you'll see a d
 
 1. Obtain the files by either cloning this repository or [downloading the repository zip file][zip].
 2. Unzip if required and copy all files starting with `roland\_` to the appropriate Inkscape extensions folder:
-    1. For per-user installation: open Inkscape Preferences -> System, look for 'User Extensions' and click the 'Open' button.
-    1. To install system-wide: open the same preferences tab. The correct folder is listed further down under 'Inkscape extensions'.
+    1. For per-user installation: open Inkscape's preferences (Edit -> Preferences, or Inkscape -> Preferences on macOS). Under the System tab, look for 'User extensions' and then navigate to that location or click the 'Open' button.
+    2. To install system-wide: open the same preferences tab. The correct folder is listed further down under 'Inkscape extensions'.
 3. Restart Inkscape.
 
 [zip]: https://github.com/mgmax/inkscape-roland-cutstudio/archive/refs/heads/master.zip
