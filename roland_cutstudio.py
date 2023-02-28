@@ -23,12 +23,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 '''
 
 # The source code is a horrible mess. I apologize for your inconvenience, but hope that it still helps. Feel free to improve :-)
-# Keep everything python2 compatible as long as people out there are using Inkscape <= 0.92.4!
-
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 
 from builtins import open
 from builtins import map

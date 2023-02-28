@@ -57,7 +57,7 @@ These issues won't be fixed as there's a workaround for the first issue and CutS
 
 ## Contributing
 
-I am sorry that the code is so horrible. If anyone feels the desire to burn everything and rewrite it from scratch, please feel free to do so. If you're making changes to the code, please make sure that `python2.7 roland_cutstudio.py --selftest` and `python3 roland_cutstudio.py --selftest` work before you submit a pull request.
+I am sorry that the code is so horrible. If anyone feels the desire to burn everything and rewrite it from scratch, please feel free to do so. If you're making changes to the code, please make sure that `python3 roland_cutstudio.py --selftest` works before you submit a pull request.
 
 ## Details
 
