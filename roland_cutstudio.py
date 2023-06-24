@@ -52,6 +52,13 @@ import string
 DEVNULL = open(os.devnull, 'w')
 atexit.register(DEVNULL.close)
 
+
+# work around Inkscape 1.3 failing to start when it "calls itself" (Inkscape -> Extension -> Inkscape):
+# https://gitlab.com/inkscape/inkscape/-/issues/4163
+# https://gitlab.com/inkscape/extensions/-/merge_requests/534
+# TODO: Rewrite most parts of this extension using the inkex python module. This removes the need for such workarounds.
+os.environ["SELF_CALL"] = "true"
+
 def message(s):
 	sys.stderr.write(s+"\n")
 def debug(s):
