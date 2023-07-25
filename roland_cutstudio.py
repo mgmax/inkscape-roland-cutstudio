@@ -287,8 +287,8 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
         m=m.transpose()
         #debug("with {}".format(m))
         pnew = numpy.matmul(m, p)
-        x=float(pnew[0])
-        y=float(pnew[1])
+        x=float(pnew.item[0])
+        y=float(pnew.item[1])
         #debug("to: {} {}".format(x, y))
         return [x, y]
     def outputMoveto(x, y):
