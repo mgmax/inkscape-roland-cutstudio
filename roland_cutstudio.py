@@ -385,8 +385,8 @@ else:
     # only take selected elements
     stripSVG_inkscape(src=filename, dest=filename+".filtered.svg", elements=selectedElements)
 
-cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-drawing", "--export-filename="+filename+".inkscape.eps", filename+".filtered.svg"]
-inkscape_eps_file = filename + ".inkscape.eps"
+cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-page", "--export-filename="+filename+".inkscape.ps", filename+".filtered.svg"]
+inkscape_eps_file = filename + ".inkscape.ps"
 
 #debug(" ".join(cmd))
 assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
