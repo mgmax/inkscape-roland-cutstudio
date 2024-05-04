@@ -37,17 +37,12 @@ import numpy
 from functools import reduce
 import atexit
 import filecmp
-try:
-    from pathlib import Path
-except ImportError:
-    # Workaround for Python < 3.5
-    class fakepath:
-        def home(self):
-            return os.path.expanduser("~")
-    Path = fakepath()
+from pathlib import Path
 import tempfile
 import random
 import string
+import json
+import re
 
 DEVNULL = open(os.devnull, 'w')
 atexit.register(DEVNULL.close)
@@ -166,16 +161,42 @@ def stripSVG_inkscape(src, dest, elements):
     os.rename(tmpfile, dest)
 
 
+MM_TO_PT = 72 / 25.4
+
+def make_cropmark_header(cropmark_settings):
+    """
+    Generate %%RolandCropMark EPS command.
+    
+    :param cropmark_settings: see parse_cropmark_settings()
+    """
+    
+    if cropmark_settings is None:
+        return ""
+    
+    """
+    Calculate values for CutStudio:
+    
+    base_x_mm Setting "BaseX" in CutStudio. Meaning unclear.
+    base_y_mm: Setting "BaseY" in CutStudio. Meaning unclear.
+    width_mm: Setting "W" in CutStudio. Width between center of cropmarks.
+    height_mm: Setting "H" in CutStudio. Height between center of cropmarks.
+    """
+    base_x_mm = 5 # default value from CutStudio
+    base_y_mm = 5 # default value from CutStudio
+    width_mm = cropmark_settings["W"]
+    height_mm = cropmark_settings["H"]
+    return f"%%RolandCropMark: {base_x_mm * MM_TO_PT} {base_y_mm * MM_TO_PT} {width_mm * MM_TO_PT} {height_mm * MM_TO_PT} 56.692913 56.692913 4\n"
 
 
 # header
 # for debugging purposes you can open the resulting EPS file in Inkscape,
 #  select all, ungroup multiple times
 # --> now you can view the exported lines in inkscape
-prefix="""
+prefix_template="""
 %!PS-Adobe-3.0 EPSF-3.0
 %%LanguageLevel: 2
 %%BoundingBox -10000 -10000 10000 10000
+%<CROPMARK_INSERTED_HERE>
 %%EndComments
 %%BeginSetup
 %%EndSetup
@@ -268,7 +289,19 @@ end restore
 %%EOF
 """
 
-def EPS2CutstudioEPS(src, dest, mirror=False):
+def EPS2CutstudioEPS(src, dest, mirror=False, cropmark_settings=None):
+    """
+    Convert original EPS (from Inkscape) to something that CutStudio understands.
+
+    Mainly, we ungroup all groups and apply all transformations.
+
+    :param mirror: Mirror horizontally
+
+    :param cropmark_settings:
+        'None' for normal cutting.
+        To enable cropmark scanning, set it to a dict specifying the page size (pageW, pageH)
+        and the cropmark location settings (dx, dy, W, H) as defined in make_cropmark_header()
+    """
     def outputFromStack(stack, n, transformCoordinates=True):
         arr=stack[-(n+1):-1]
         if transformCoordinates:
@@ -303,11 +336,28 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
         #debug("OUTPUT: "+output)
         return output + "\n"
     stack=[]
-    scalingStack=[numpy.identity(3)]
-    if mirror:
-        scalingStack.append(numpy.diag([-1, 1, 1]))
+    scalingStack=[numpy.identity(3)]     
     lastMoveCoordinates=None
+    
+    # Set up initial transformation
+    if mirror and cropmark_settings:
+        raise Exception("Mirror horizontal is not supported when cropmarks are used")
+    if mirror:
+        # Horizontal mirroring is enabled by user
+        scalingStack.append(numpy.diag([-1, 1, 1]))
+    if cropmark_settings:
+        # Translation for cropmarks (cropmark is always at fixed position, cut lines must be moved appropriately)
+        # 5 is the currently hardcoded value of BaseX and BaseY
+        translate_x = (5 - cropmark_settings["dx"]) * MM_TO_PT
+        translate_y = (5 - cropmark_settings["dy"]) * MM_TO_PT
+        # FIXME: why is .transpose() needed here?
+        scalingStack.append(numpy.array([[1, 0, translate_x], [0, 1, translate_y], [0, 0, 1]]).transpose())
+                    
+    # Postscript Header, incl. magic comment for cropmark locations
+    prefix = prefix_template.replace("%<CROPMARK_INSERTED_HERE>\n", make_cropmark_header(cropmark_settings))
     outputStr=prefix
+    
+    # Actual EPS content
     inputFile=open(src)
     outputFile=open(dest, "w")
     for line in inputFile.readlines():
@@ -362,6 +412,38 @@ def EPS2CutstudioEPS(src, dest, mirror=False):
     outputFile.close()
     inputFile.close()
 
+def parse_cropmark_settings(svg_contents):
+    """
+    Parse SVG file and determine cropmark marker settings.
+    Settings are stored in a string like
+    'INKSCAPE_CUTSTUDIO_CROPMARK_SETTINGS={"version":1, "pageW":210, "pageH":297, "dx":20, "dy":25, "W":170, "H":120}'
+    that is part of a text element.
+    
+    
+    Return settings as dictionary, if present. Else, return None.
+    
+    
+    Settings entries:
+    
+    version: currently fixed to 1, may be used to detect incompatible old templates
+    
+    pageW, pageH: page size in mm
+    
+    dx, dy: distance in X/Y between bottom left corner of page and bottom left cropmark
+    
+    W, H: distance in X/Y between center of cropmarks
+    
+    """
+    match = re.search(r'INKSCAPE_CUTSTUDIO_CROPMARK_SETTINGS=(\{["a-zA-Z0-9,\.: ]+\})', svg_contents.replace("&quot;", '"'))
+    if not match:
+        return None
+    settings = json.loads(match.group(1))
+    if settings.get("version") != 1:
+        raise Exception("invalid cropmark settings version. Please use the newest template file.")
+    return settings
+
+assert parse_cropmark_settings('INKSCAPE_CUTSTUDIO_CROPMARK_SETTINGS={"version":1, "pageW":210, "pageH":297, "dx":20, "dy":25, "W":170, "H":120}'.replace('"', '&quot;')) == {"version": 1, "pageW": 210, "pageH": 297, "dx": 20, "dy": 25, "W": 170, "H": 120};
+
 if os.name=="nt": # windows
 	INKSCAPEBIN = which("inkscape.exe", True, subdir="Inkscape")
 else:
@@ -400,13 +482,27 @@ else:
     # normally
     destination = filename + ".cutstudio.eps"
 
-EPS2CutstudioEPS(inkscape_eps_file, destination, mirror=("--mirror=true" in sys.argv))
+def read_file(path):
+    with open(path) as f:
+        return f.read()
+
+EPS2CutstudioEPS(inkscape_eps_file, destination, mirror=("--mirror=true" in sys.argv), cropmark_settings=parse_cropmark_settings(read_file(filename)))
 
 if "--selftest" in sys.argv:
     # unittest: compare with known reference output
     TEST_REFERENCE_FILE = "./test-output-reference.cutstudio.eps"
     assert filecmp.cmp(destination, TEST_REFERENCE_FILE), "Test output changed. Please compare " + destination + " and " + TEST_REFERENCE_FILE
     print("Selftest successful :-)")
+    sys.exit(0)
+
+if "--cropmark-template=true" in sys.argv:
+    # Generate template for cropmarks
+    # Currently, we return a hardcoded result, removing all existing contant.
+    # User settings are currently hard coded as:
+    # Page size A4 with W=170 L=210 mm, lower-left cropmark is offset from lower-left-corner by dX=20 dY=25 mm
+    TEMPLATE_FILE = Path().absolute() / "template-cropmarks.svg"
+    with open(TEMPLATE_FILE) as f:
+        print(f.read())
     sys.exit(0)
 
 if os.name=="nt":
