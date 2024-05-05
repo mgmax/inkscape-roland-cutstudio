@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 '''
 Roland CutStudio export script
-Copyright (C) 2014 - 2020 Max Gaukler <development@maxgaukler.de>
+Copyright (C) 2014 - 2024 Max Gaukler <development@maxgaukler.de>
 
 skeleton based on Visicut Inkscape Plugin :
 Copyright (C) 2012 Thomas Oster, thomas.oster@rwth-aachen.de
@@ -24,10 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # The source code is a horrible mess. I apologize for your inconvenience, but hope that it still helps. Feel free to improve :-)
 
-from builtins import open
-from builtins import map
-from builtins import str
-from builtins import range
 import sys
 import os
 from subprocess import Popen
@@ -43,20 +39,12 @@ import random
 import string
 import json
 import re
+from typing import Optional, List, Union
 
-DEVNULL = open(os.devnull, 'w')
-atexit.register(DEVNULL.close)
-
-
-# work around Inkscape 1.3 failing to start when it "calls itself" (Inkscape -> Extension -> Inkscape):
-# https://gitlab.com/inkscape/inkscape/-/issues/4163
-# https://gitlab.com/inkscape/extensions/-/merge_requests/534
-# TODO: Rewrite most parts of this extension using the inkex python module. This removes the need for such workarounds.
-os.environ["SELF_CALL"] = "true"
-
-def message(s):
+def message(s: str):
 	sys.stderr.write(s+"\n")
-def debug(s):
+
+def debug(s: str):
     message(s)
 
 # copied from https://github.com/t-oster/VisiCut/blob/0abe785a30d5d5085dd3b5953b38239b1ff83358/tools/inkscape_extension/visicut_export.py
@@ -98,7 +86,6 @@ def stripSVG_inkscape(src, dest, elements):
     tmpfile = tempfile.NamedTemporaryFile(delete=False, prefix='temp-visicut-', suffix='.svg')
     tmpfile.close()
     tmpfile = tmpfile.name
-    import shutil
     shutil.copyfile(src, tmpfile)
 
 
@@ -133,7 +120,7 @@ def stripSVG_inkscape(src, dest, elements):
     actions += ["export-do"]
 
 
-    command = [INKSCAPEBIN, tmpfile, "--export-overwrite", "--actions=" + ";".join(actions)]
+    command = [inkscape_command(), tmpfile, "--export-overwrite", "--actions=" + ";".join(actions)]
     # to print the resulting commandline:
     # print(" ".join(["'" + c + "'" for c in command]), file=sys.stderr)
     
@@ -142,7 +129,7 @@ def stripSVG_inkscape(src, dest, elements):
     if DEBUG:
         # Inkscape sometimes silently ignores wrong verbs, so we need to double-check that everything's right
         for action in actions:
-            aciton_list = [line.split(":")[0] for line in subprocess.check_output([INKSCAPEBIN, "--action-list"], stderr=DEVNULL).split("\n")]
+            aciton_list = [line.split(":")[0] for line in subprocess.check_output([inkscape_command(), "--action-list"], stderr=DEVNULL).split("\n")]
             if action not in action_list:
                 sys.stderr.write("Inkscape does not have the action '{}'. Please report this as a VisiCut bug.".format(action))
         
@@ -161,9 +148,13 @@ def stripSVG_inkscape(src, dest, elements):
     os.rename(tmpfile, dest)
 
 
-MM_TO_PT = 72 / 25.4
+def mm_to_pt(x_mm: float) -> float:
+    """
+    convert value from millimeters to EPS points (pt).
+    """
+    return x_mm * 72 / 25.4
 
-def make_cropmark_header(cropmark_settings):
+def make_cropmark_header(cropmark_settings: Optional[dict]) -> str:
     """
     Generate %%RolandCropMark EPS command.
     
@@ -176,33 +167,32 @@ def make_cropmark_header(cropmark_settings):
     """
     Calculate values for CutStudio:
     
-    base_x_mm Setting "BaseX" in CutStudio. Meaning unclear.
-    base_y_mm: Setting "BaseY" in CutStudio. Meaning unclear.
-    width_mm: Setting "W" in CutStudio. Width between center of cropmarks.
-    height_mm: Setting "H" in CutStudio. Height between center of cropmarks.
+    base_x_mm Setting "BaseX" in CutStudio. Meaning unclear. Probably: Radius of cropmark.
+    base_y_mm: Setting "BaseY" in CutStudio. Meaning unclear. Probably: Radius of cropmark.
+    width_mm: Setting "W" in CutStudio. X distance between center of cropmarks.
+    height_mm: Setting "H" in CutStudio. Y distance between center of cropmarks.
     """
     base_x_mm = 5 # default value from CutStudio
     base_y_mm = 5 # default value from CutStudio
     width_mm = cropmark_settings["W"]
     height_mm = cropmark_settings["H"]
-    return f"%%RolandCropMark: {base_x_mm * MM_TO_PT} {base_y_mm * MM_TO_PT} {width_mm * MM_TO_PT} {height_mm * MM_TO_PT} 56.692913 56.692913 4\n"
+    return f"%%RolandCropMark: {mm_to_pt(base_x_mm)} {mm_to_pt(base_y_mm)} {mm_to_pt(width_mm)} {mm_to_pt(height_mm)} 56.692913 56.692913 4\n"
 
 
-# header
+# Template for EPS file in CutStudio format
 # for debugging purposes you can open the resulting EPS file in Inkscape,
 #  select all, ungroup multiple times
 # --> now you can view the exported lines in inkscape
-prefix_template="""
+CUTSTUDIO_EPS_TEMPLATE="""
 %!PS-Adobe-3.0 EPSF-3.0
 %%LanguageLevel: 2
-%%BoundingBox -10000 -10000 10000 10000
+%%BoundingBox: -10000 -10000 10000 10000
 %<CROPMARK_INSERTED_HERE>
 %%EndComments
 %%BeginSetup
 %%EndSetup
 %%BeginProlog
 % This code (until EndProlog) is from an inkscape-exported EPS, copyright unknown, see cairo-library
-save
 50 dict begin
 /q { gsave } bind def
 /Q { grestore } bind def
@@ -226,9 +216,6 @@ save
 /W* { eoclip } bind def
 /BT { } bind def
 /ET { } bind def
-/pdfmark where { pop globaldict /?pdfmark /exec load put }
-    { globaldict begin /?pdfmark /pop load def /pdfmark
-    /cleartomark load def end } ifelse
 /BDC { mark 3 1 roll /BDC pdfmark } bind def
 /EMC { mark /EMC pdfmark } bind def
 /cairo_store_point { /cairo_point_y exch def /cairo_point_x exch def } def
@@ -253,47 +240,57 @@ save
 /g { setgray } bind def
 /rg { setrgbcolor } bind def
 /d1 { setcachedevice } bind def
+/cairo_data_source {
+  CairoDataIndex CairoData length lt
+    { CairoData CairoDataIndex get /CairoDataIndex CairoDataIndex 1 add def }
+    { () } ifelse
+} def
+/cairo_flush_ascii85_file { cairo_ascii85_file status { cairo_ascii85_file flushfile } if } def
+/cairo_image { image cairo_flush_ascii85_file } def
+/cairo_imagemask { imagemask cairo_flush_ascii85_file } def
 %%EndProlog
 %%Page: 1 1
 %%BeginPageSetup
 %%PageBoundingBox: -10000 -10000 10000 10000
 %%EndPageSetup
 % This is a severely crippled fucked-up pseudo-postscript for importing in Roland CutStudio
-% Do not even try to open it with something else
-% FIXME opening with inkscape currently does not show any objects, although it worked some time in the past
+% For debugging purpose you can also try to open it in Inkscape
 
 % Inkscape header, not used by cutstudio
 % Start
-q -10000 -10000 10000 10000 rectclip q
 
+
+q q
 0 g
-0.286645 w
+1.41732 w
 0 J
 0 j
 [] 0.0 d
-4 M q
+4 M q 
 % Cutstudio Start
-"""
-postfix="""
+%<CUTTING_LINES_INSERTED_HERE>
 % Cutstudio End
 
 %this is necessary for CutStudio so that the last line isnt skipped:
 0 0 m
 
-% Inkscape footer
+% Inkscape footer, not used by cutstudio
 S Q
+
 Q Q
 showpage
 %%Trailer
-end restore
+end
 %%EOF
+
 """
 
-def EPS2CutstudioEPS(src, dest, mirror=False, cropmark_settings=None):
+def EPS2CutstudioEPS(src: str, dest: str, mirror: bool = False, cropmark_settings : Optional[dict] = None):
     """
     Convert original EPS (from Inkscape) to something that CutStudio understands.
 
     Mainly, we ungroup all groups and apply all transformations.
+    To implement this we build a crude EPS parser.
 
     :param mirror: Mirror horizontally
 
@@ -348,14 +345,12 @@ def EPS2CutstudioEPS(src, dest, mirror=False, cropmark_settings=None):
     if cropmark_settings:
         # Translation for cropmarks (cropmark is always at fixed position, cut lines must be moved appropriately)
         # 5 is the currently hardcoded value of BaseX and BaseY
-        translate_x = (5 - cropmark_settings["dx"]) * MM_TO_PT
-        translate_y = (5 - cropmark_settings["dy"]) * MM_TO_PT
+        translate_x = mm_to_pt(5 - cropmark_settings["dx"])
+        translate_y = mm_to_pt(5 - cropmark_settings["dy"])
         # FIXME: why is .transpose() needed here?
         scalingStack.append(numpy.array([[1, 0, translate_x], [0, 1, translate_y], [0, 0, 1]]).transpose())
-                    
-    # Postscript Header, incl. magic comment for cropmark locations
-    prefix = prefix_template.replace("%<CROPMARK_INSERTED_HERE>\n", make_cropmark_header(cropmark_settings))
-    outputStr=prefix
+    
+    outputStr = ""
     
     # Actual EPS content
     inputFile=open(src)
@@ -407,12 +402,16 @@ def EPS2CutstudioEPS(src, dest, mirror=False, cropmark_settings=None):
                 stack=[]
             else:
                 pass # do nothing
-    outputStr += postfix
-    outputFile.write(outputStr)
+        
+    # Postscript Header and footer, incl. magic comment for cropmark locations
+    epsContent = CUTSTUDIO_EPS_TEMPLATE
+    epsContent = epsContent.replace("%<CROPMARK_INSERTED_HERE>\n", make_cropmark_header(cropmark_settings))
+    epsContent = epsContent.replace("%<CUTTING_LINES_INSERTED_HERE>\n", outputStr)
+    outputFile.write(epsContent)
     outputFile.close()
     inputFile.close()
 
-def parse_cropmark_settings(svg_contents):
+def parse_cropmark_settings(svg_contents: str) -> Optional[dict]:
     """
     Parse SVG file and determine cropmark marker settings.
     Settings are stored in a string like
@@ -444,89 +443,175 @@ def parse_cropmark_settings(svg_contents):
 
 assert parse_cropmark_settings('INKSCAPE_CUTSTUDIO_CROPMARK_SETTINGS={"version":1, "pageW":210, "pageH":297, "dx":20, "dy":25, "W":170, "H":120}'.replace('"', '&quot;')) == {"version": 1, "pageW": 210, "pageH": 297, "dx": 20, "dy": 25, "W": 170, "H": 120};
 
-if os.name=="nt": # windows
-	INKSCAPEBIN = which("inkscape.exe", True, subdir="Inkscape")
-else:
-	INKSCAPEBIN=which("inkscape", True)
+def call_inkscape(args: List[str]):
+    """
+    Call inkscape with the given arguments
+    """
+    # work around Inkscape 1.3 failing to start when it "calls itself" (Inkscape -> Extension -> Inkscape):
+    # https://gitlab.com/inkscape/inkscape/-/issues/4163
+    # https://gitlab.com/inkscape/extensions/-/merge_requests/534
+    # TODO: Rewrite most parts of this extension using the inkex python module. This removes the need for such workarounds.
+    os.environ["SELF_CALL"] = "true"
+    
+    cmd = [inkscape_command()] + args
+    assert 0 == subprocess.call(cmd, stderr=subprocess.DEVNULL), 'Calling Inkscape failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
 
-assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
-
-selectedElements=[]
-for arg in sys.argv[1:]:
-    if arg[0] == "-":
-        if len(arg) >= 5 and arg[0:5] == "--id=":
-            selectedElements +=[arg[5:]]
+def inkscape_command() -> str:
+    """
+    Get path to Inkscape binary
+    """
+    if "INKSCAPE_COMMAND" in os.environ:
+        INKSCAPEBIN = os.environ["INKSCAPE_COMMAND"]
+        sys.stderr.write("hallo")
+    elif os.name=="nt": # windows
+        INKSCAPEBIN = which("inkscape.exe", True, subdir="Inkscape")
     else:
-        filename = arg
-if "--selftest" in sys.argv:
-    filename = "./test-input.svg"
+        INKSCAPEBIN=which("inkscape", True)
 
-if len(selectedElements)==0:
-    shutil.copyfile(filename, filename+".filtered.svg")
-else:
-    # only take selected elements
-    stripSVG_inkscape(src=filename, dest=filename+".filtered.svg", elements=selectedElements)
+    assert os.path.isfile(INKSCAPEBIN),  "cannot find inkscape binary " + INKSCAPEBIN
+    return INKSCAPEBIN
 
-cmd = [INKSCAPEBIN, "-T", "--export-ignore-filters",  "--export-area-page", "--export-filename="+filename+".inkscape.ps", filename+".filtered.svg"]
-inkscape_eps_file = filename + ".inkscape.ps"
+def remove_unselected_elements_from_SVG(filename: str, selectedElements: List[str]):
+    """
+    SVG --> SVG with only selected elements
+    """
+    if len(selectedElements)==0:
+        shutil.copyfile(filename, filename+".filtered.svg")
+    else:
+        # only take selected elements
+        stripSVG_inkscape(src=filename, dest=filename+".filtered.svg", elements=selectedElements)
+    return filename + ".filtered.svg"
 
-#debug(" ".join(cmd))
-assert 0 == subprocess.call(cmd, stderr=DEVNULL), 'EPS conversion failed: command returned error: ' + '"' + '" "'.join(cmd) + '"'
-assert os.path.exists(inkscape_eps_file), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
+def svg_to_inkscape_eps(svg_file_in: str, eps_file_out: str, export_area_page: bool):
+    """
+    SVG --> Inkscape EPS
+    
+    :param svg_file_in: File path of SVG file input
+    :param eps_file_out: File path of EPS file output
+    :param export_area_page: True: preserve position relative to page / False: crop to drawing area
+    """
+    cmd = ["-T", "--export-ignore-filters"]
+    if export_area_page:
+        cmd += ["--export-area-page"]
+    else:
+        cmd += ["--export-area-drawing"]
+    cmd += ["--export-filename="+eps_file_out, svg_file_in]
+    call_inkscape(cmd)
+    assert os.path.exists(eps_file_out), 'EPS conversion failed: command did not create result file: ' + '"' + '" "'.join(cmd) + '"' 
 
+def open_in_cutstudio(cutstudio_eps_file: str) -> None:
+    """
+    Open EPS file in CutStudio
+    """
+    if os.name=="nt":
+        # on Windows
+        DETACHED_PROCESS = 8 # start as "daemon"
+        Popen([which("CutStudio\CutStudio.exe", True), "/import", cutstudio_eps_file], creationflags=DETACHED_PROCESS, close_fds=True)
+    else:
+        # On Linux, try with "wine"
+        CUTSTUDIO_C_DRIVE = str(Path.home()) + "/.wine/drive_c/"
+        CUTSTUDIO_PATH_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
+        CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_PATH_LINUX_WINE, "/import", r'C:\cutstudio.eps']
+        try:
+            if not which("wine", False):
+                    raise Exception("Cannot find 'wine'")
+            if not os.path.exists(CUTSTUDIO_PATH_LINUX_WINE):
+                raise Exception("Cannot find CutStudio in " + CUTSTUDIO_PATH_LINUX_WINE)
+            shutil.copyfile(cutstudio_eps_file, CUTSTUDIO_C_DRIVE + "cutstudio.eps")
+            subprocess.check_call(CUTSTUDIO_COMMANDLINE, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        except Exception as exc:
+            message("Could not open CutStudio.\nInstead, your file was saved to:\n" + cutstudio_eps_file + "\n" + \
+                "Please open that with CutStudio manually. \n\n" + \
+                "Tip: On Linux, you can use 'wine' to install CutStudio 3.10. Then, the file will be directly opened with CutStudio. \n" + \
+                " Diagnostic information: \n" + str(exc))
 
-if "--selftest" in sys.argv:
-    # used for unit-testing: fixed location of output file
-    destination = "./test-output-actual.cutstudio.eps"
-else:
-    # normally
-    destination = filename + ".cutstudio.eps"
-
-def read_file(path):
+def read_file(path: Union[str, Path]) -> str:
+    """
+    Read text file to string
+    """
     with open(path) as f:
         return f.read()
 
-EPS2CutstudioEPS(inkscape_eps_file, destination, mirror=("--mirror=true" in sys.argv), cropmark_settings=parse_cropmark_settings(read_file(filename)))
+def inkscape_to_cutstudio() -> None:
+    """
+    Take Inkscape SVG, process and send to CutStudio.
+    """
+    
+    # parse commandline: selftest mode
+    selftest = ("--selftest" in sys.argv)
+    
+    # parse commandline: selected elements and filename
+    selectedElements=[]
+    for arg in sys.argv[1:]:
+        if arg[0] == "-":
+            if len(arg) >= 5 and arg[0:5] == "--id=":
+                selectedElements +=[arg[5:]]
+        else:
+            filename = arg
+    if selftest:
+        filename = "./test-input.svg"
+        
+    # parse commandline: mirror horizontal
+    mirror = ("--mirror=true" in sys.argv)
+    
+    
+    # Determine cropmark settings.
+    # If the SVG file is based on the cropmark template generated by this plugin, then it contains a "magic text" from which the cropmark information is determined.
+    # Else, cropmark_settings is None.
+    cropmark_settings=parse_cropmark_settings(read_file(filename))
+    
+    # SVG --> SVG with only selected elements
+    svg_only_selection = remove_unselected_elements_from_SVG(filename, selectedElements)
+    
+    # SVG --> Inkscape EPS
+    inkscape_eps = filename+".inkscape.ps"
+    # If cropmark is active, then preserve the position relative to the page. Else, fit to drawing ("move to bottom-left" in CutStudio).
+    export_area_page = (cropmark_settings is not None)
+    svg_to_inkscape_eps(svg_file_in = filename+".filtered.svg", eps_file_out=inkscape_eps, export_area_page=export_area_page)
+    
 
-if "--selftest" in sys.argv:
-    # unittest: compare with known reference output
-    TEST_REFERENCE_FILE = "./test-output-reference.cutstudio.eps"
-    assert filecmp.cmp(destination, TEST_REFERENCE_FILE), "Test output changed. Please compare " + destination + " and " + TEST_REFERENCE_FILE
-    print("Selftest successful :-)")
-    sys.exit(0)
+    # determine destination filename
+    if selftest:
+        # used for unit-testing: fixed location of output file
+        destination = "./test-output-actual.cutstudio.eps"
+    else:
+        # normally
+        destination = filename + ".cutstudio.eps"
+    
+    # Inkscape EPS --> CutStudio EPS
+    EPS2CutstudioEPS(inkscape_eps, destination, mirror=mirror, cropmark_settings=cropmark_settings)
 
-if "--cropmark-template=true" in sys.argv:
-    # Generate template for cropmarks
-    # Currently, we return a hardcoded result, removing all existing contant.
-    # User settings are currently hard coded as:
-    # Page size A4 with W=170 L=210 mm, lower-left cropmark is offset from lower-left-corner by dX=20 dY=25 mm
-    TEMPLATE_FILE = Path().absolute() / "template-cropmarks.svg"
-    with open(TEMPLATE_FILE) as f:
-        print(f.read())
-    sys.exit(0)
+    # Show in CutStudio
+    open_in_cutstudio(destination)
 
-if os.name=="nt":
-    DETACHED_PROCESS = 8 # start as "daemon"
-    Popen([which("CutStudio\CutStudio.exe", True), "/import", destination], creationflags=DETACHED_PROCESS, close_fds=True)
-else: #check if we have access to "wine"
-    CUTSTUDIO_C_DRIVE = str(Path.home()) + "/.wine/drive_c/"
-    CUTSTUDIO_PATH_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
-    CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_PATH_LINUX_WINE, "/import", r'C:\cutstudio.eps']
-    try:
-        if not which("wine", False):
-            raise Exception("Cannot find 'wine'")
-        if not os.path.exists(CUTSTUDIO_PATH_LINUX_WINE):
-            raise Exception("Cannot find CutStudio in " + CUTSTUDIO_PATH_LINUX_WINE)
-        shutil.copyfile(destination, CUTSTUDIO_C_DRIVE + "cutstudio.eps")
-        subprocess.check_call(CUTSTUDIO_COMMANDLINE, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    except Exception as exc:
-        message("Could not open CutStudio.\nInstead, your file was saved to:\n" + destination + "\n" + \
-            "Please open that with CutStudio manually. \n\n" + \
-            "Tip: On Linux, you can use 'wine' to install CutStudio 3.10. Then, the file will be directly opened with CutStudio. \n" + \
-            " Diagnostic information: \n" + str(exc))
-        #os.popen("/usr/bin/xdg-open " + filename)
-        #Popen(["inkscape", filename+".filtered.svg"], stderr=DEVNULL)
-        #Popen(["inkscape", filename+".cutstudio.eps"])
-#os.unlink(filename+".filtered.svg")
-#os.unlink(filename)
-#os.unlink(filename+".cutstudio.eps")
+    if selftest:
+        # unittest: compare with known reference output
+        TEST_REFERENCE_FILE = "./test-output-reference.cutstudio.eps"
+        assert filecmp.cmp(destination, TEST_REFERENCE_FILE), "Test output changed. Please compare " + destination + " and " + TEST_REFERENCE_FILE
+        print("Selftest successful :-)")
+
+
+
+def main() -> None:
+    """
+    Main function.
+    
+    Handle the main operating modes of the plugin:
+    - Cropmark template
+    - Open in Cutstudio
+    """
+    
+    if "--cropmark-template=true" in sys.argv:
+        # Generate template for cropmarks
+        # Currently, we return a hardcoded result, removing all existing contant.
+        # User settings are currently hard coded as:
+        # Page size A4 with W=170 L=210 mm, lower-left cropmark is offset from lower-left-corner by dX=20 dY=25 mm
+        TEMPLATE_FILE = Path().absolute() / "roland_cutstudio_cropmark_template.svg"
+        print(read_file(TEMPLATE_FILE))
+        return
+
+    # Standard case: Inkscape to cutstudio
+    inkscape_to_cutstudio()
+    
+if __name__ == "__main__":
+    main()
