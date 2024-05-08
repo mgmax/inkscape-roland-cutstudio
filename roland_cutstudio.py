@@ -114,8 +114,10 @@ def stripSVG_inkscape(src, dest, elements):
     # - set group ID to a known value. Use a pseudo-random value to avoid collisions
     target_group_id = "TARGET-GROUP-" + "".join(random.sample(string.ascii_lowercase, 20))
     actions += ["object-set-attribute:id," + target_group_id]
-    # - set export options: use only the target group ID, nothing else
+    # - set export options: use only the target group ID, nothing else,
     actions += ["export-id-only:true", "export-id:" + target_group_id]
+    # - keep the position on the page
+    actions += ["export-area-page"]
     # - export
     actions += ["export-do"]
 
@@ -474,6 +476,8 @@ def inkscape_command() -> str:
 def remove_unselected_elements_from_SVG(filename: str, selectedElements: List[str]):
     """
     SVG --> SVG with only selected elements
+    
+    selectedElements: list of selected element ids to be kept. An empty list is treated as "everything selected"!
     """
     if len(selectedElements)==0:
         shutil.copyfile(filename, filename+".filtered.svg")
