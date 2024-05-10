@@ -83,9 +83,13 @@ Inkscape 1.2 [replaced verbs with actions][1.2notes], changing the way this plug
 
 These issues won't be fixed as there's a workaround for the first issue and CutStudio has no way of handling bitmaps.
 
+If you find other issues, please report them [on GitHub][gh-issues].
+
 ## Contributing
 
 I am sorry that the code is so horrible. If anyone feels the desire to burn everything and rewrite it from scratch, please feel free to do so. If you're making changes to the code, please make sure that `python3 roland_cutstudio.py --selftest` works before you submit a pull request.
+
+[gh-issues]: https://github.com/mgmax/inkscape-roland-cutstudio/issues
 
 ## Details
 

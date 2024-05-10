@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+  <_name>Help</_name>
+  <id>roland_custudio.help</id>
+  <dependency type="executable" location="extensions">roland_cutstudio.py</dependency>
+  <param name="show-help" type="boolean" gui-hidden="true">true</param> 
+  <effect needs-live-preview="false">
+        <object-type>path</object-type>
+        <effects-menu>
+            <submenu _name="Roland CutStudio"/>
+        </effects-menu>
+    </effect>
+  <script>
+    <command reldir="extensions" interpreter="python">roland_cutstudio.py</command>
+  </script>
+</inkscape-extension>
