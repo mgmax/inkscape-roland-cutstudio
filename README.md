@@ -23,20 +23,27 @@
 
 For plotters that support it (e.g., Roland GX-24), you can use cropmarks to align cut lines to a custom printed page, e.g., for printing and cutting stickers.
 
+
+<p align="center">
+    <img alt="Screenshots of Inkscape print and cut file and CutStudio output, side by side" src="images/cropmarks.png" width="600"/>
+</p>
+
 Before using this option, CutStudio must be set up so that normal use works properly. (CutStudio remembers the previously selected plotter and does strange things if you selected a device that can not plot).
 
 1. Open Inkscape, create a new blank file.
 2. Open the Extensions menu, then select Roland CutStudio -> Insert Cropmarks.
-3. You now have an example file with DIN A4 pagesize and crop marks that it should work on a Roland GX-24 (and hopefully many other plotters). Changing the page size and cropmark position is currently not possible.
-4. Draw your print graphics on the layer "Print graphics". Remove the "Remove me" placeholder.
-5. Copy/draw your cut lines on the layer "Cut lines". (Using the layers is not strictly necessary, but will make it easier for you.)
+3. You now have an example file with DIN A4 pagesize and crop marks that should work on a Roland GX-24 (and hopefully many other plotters). Changing the page size and cropmark position is currently not possible.
+4. The following explanation uses separate layers for printing and drawing. You can also do it in a different way.
+5. Draw your print graphics on the layer "Print graphics". Remove the "Remove me" placeholder.
+5. Copy/draw your cut lines on the layer "Cut lines".
 6. Hide the layer "Cut Lines". Print the print graphics on your printer, including the black cropmark circles.
 7. Unhide the layer "Cut lines".
-8. Click on the layer "Cut lines" in the Layers dialog to select all cut lines. Open the Extensions menu, then select -> Roland CutStudio -> Open in CutStudio.
+8. Select all cut lines: Click on the layer "Cut lines" in the Layers dialog. Then use "Edit - Select all".
+9. Open the Extensions menu, then select -> Roland CutStudio -> Open in CutStudio.
 
 Now CutStudio should display your file together with gray circles for the cropmarks. Note that you must have the correct plotter selected in the CutStudio "Cut settings".
 
-Note that CutStudio will remember the cropmark setting even for the next file and even after closing CutStudio. You need to uncheck "Print and Cut" in the CutStudio menu if you later want to do normal plotting again.
+Note that sometimes CutStudio remembers the cropmark setting even for the next file and even after closing CutStudio. You need to uncheck "Print and Cut" in the CutStudio menu if you later want to do normal plotting again.
 
 ### Using without CutStudio installed
 
