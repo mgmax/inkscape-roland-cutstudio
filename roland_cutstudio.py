@@ -40,6 +40,7 @@ import string
 import json
 import re
 from typing import Optional, List, Union
+import webbrowser
 
 def message(s: str):
 	sys.stderr.write(s+"\n")
@@ -612,6 +613,10 @@ def main() -> None:
         # Page size A4 with W=170 L=210 mm, lower-left cropmark is offset from lower-left-corner by dX=20 dY=25 mm
         TEMPLATE_FILE = Path().absolute() / "roland_cutstudio_cropmark_template.svg"
         print(read_file(TEMPLATE_FILE))
+        return
+
+    if "--show-help=true" in sys.argv:
+        webbrowser.open("https://github.com/mgmax/inkscape-roland-cutstudio/blob/master/README.md")
         return
 
     # Standard case: Inkscape to cutstudio
