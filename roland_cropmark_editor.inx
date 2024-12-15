@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+  <name>Roland Cropmark Editor</name>
+  <id>org.inkscape.generate.roland_cropmark_editor</id>
+
+  <param name="tab" type="notebook">
+    <page name="pos" gui-text="Settings">
+      <param name="preset" type="optiongroup" appearance="combo" gui-text="Choose the machine:">
+        <option value="gx_24_gs_24">GX-24/GS2-24/GS-24</option>
+        <option value="gr_g">GR-640/540/420, GX-640/500/400</option>
+        <option value="sv_series">SV-15, SV-12</option>
+        <option value="sv_8">SV-8</option>
+        <option value="custom">Custom Margins</option>
+      </param>
+      <param name="page_size" type="optiongroup" appearance="combo" gui-text="Set page size to:">
+        <option value="A1">A1 (594 x 841 mm)</option>
+        <option value="A2">A2 (420 x 594 mm)</option>
+        <option value="A3">A3 (297 x 420 mm)</option>
+        <option value="A4">A4 (210 x 297 mm)</option>
+        <option value="custom">Custom Size</option>
+        <option value="keep">Keep Existing</option>
+      </param>
+
+      <param name="unit" gui-text="Unit:" type="optiongroup" appearance="combo">
+        <option translatable="no" value="mm">mm</option>
+        <option translatable="no" value="px">px</option>
+        <option translatable="no" value="pt">pt</option>
+        <option translatable="no" value="in">in</option>
+        <option translatable="no" value="cm">cm</option>
+      </param>
+      <label appearance="header">Manual Page Size</label>
+      <param name="new_width"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Width">210</param>
+      <param name="new_height"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Height">297</param>
+      <label appearance="header">Manual Cropmarks Margins</label>
+      <param name="margin_top"       type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Top:">40</param>
+      <param name="margin_bottom"    type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Bottom:">20</param>
+      <param name="margin_left"      type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Left:">20</param>
+      <param name="margin_right"     type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Right:">20</param>
+    </page>
+  </param>
+
+  <effect needs-live-preview="false">
+    <object-type>all</object-type>
+    <effects-menu>
+        <submenu _name="Roland CutStudio"/>
+    </effects-menu>
+  </effect>
+
+  <script>
+    <command location="inx" interpreter="python">roland_cropmark_editor.py</command>
+  </script>
+
+</inkscape-extension>
