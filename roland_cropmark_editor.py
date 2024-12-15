@@ -22,6 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 this extension automates the editing of cropmarks for the inkscape roland cutstudio extnesion
+based on Inkscape's printing marks extension
 """
 
 import math
@@ -105,9 +106,6 @@ class PrintingMarks(inkex.EffectExtension):
 
         # Update the viewBox to match the new dimensions
         root.set("viewBox", f"0 0 {width} {height}")
-
-        # Log the changes (optional for debugging purposes)
-        self.debug(f"Page resized to {width}{unit} x {height}{unit}")
 
     def draw_reg_circile(self, x, y, name, parent):
         """Draw a circle with 10mm diameter and black fill, no stroke, at specified position."""
@@ -246,7 +244,6 @@ class PrintingMarks(inkex.EffectExtension):
             }
             txt = parent.add(inkex.TextElement(**txt_attribs))
             
-            self.debug(txt.style)
 
             # Construct the cropmark settings string without the extra {{
             txt.text = (
@@ -311,7 +308,6 @@ class PrintingMarks(inkex.EffectExtension):
         self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
         self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
 
-
     def remove_layers(self, *layer_ids):
         """
         Removes layers with specified IDs from the SVG document.
@@ -334,8 +330,6 @@ class PrintingMarks(inkex.EffectExtension):
                 # Remove the layer from the SVG document
                 self.document.getroot().remove(layer)
 
-
-
     def effect(self):
         # chooses if to take values from presests or user provided
         self.apply_presets()
@@ -354,14 +348,8 @@ class PrintingMarks(inkex.EffectExtension):
                 )
             self.draw_effect(self.svg.get_page_bbox(), "")
         else:
-            for p, page in enumerate(pages):
-                if self.options.page_size != "keep":
-                    self.apply_resize_page(
-                    self.svg.viewport_to_unit(str(self.options.new_width) + self.options.unit), 
-                    self.svg.viewport_to_unit(str(self.options.new_height) + self.options.unit),
-                    self.options.unit
-                    )
-                self.draw_effect(page.bounding_box, str(p))
+            raise ValueError("Multiple pages are not supported")
+
 
 
 if __name__ == "__main__":
