@@ -12,6 +12,7 @@
         <option value="sv_8">SV-8</option>
         <option value="custom">Custom Margins</option>
       </param>
+      
       <param name="page_size" type="optiongroup" appearance="combo" gui-text="Set page size to:">
         <option value="A1">A1 (594 x 841 mm)</option>
         <option value="A2">A2 (420 x 594 mm)</option>
@@ -28,6 +29,12 @@
         <option translatable="no" value="in">in</option>
         <option translatable="no" value="cm">cm</option>
       </param>
+
+      <param name="mark_type" gui-text="Mark " type="optiongroup" appearance="combo">
+        <option value="four">Four</option>
+        <option value="three">Three</option>
+      </param>
+
       <label appearance="header">Manual Page Size</label>
       <param name="new_width"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Width">210</param>
       <param name="new_height"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Height">297</param>

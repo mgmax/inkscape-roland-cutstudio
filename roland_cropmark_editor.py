@@ -29,6 +29,7 @@ import math
 import re
 import inkex
 from inkex import Circle, Rectangle, TextElement
+from inkex.paths import Path
 from lxml import etree
 
 class PrintingMarks(inkex.EffectExtension):
@@ -41,6 +42,7 @@ class PrintingMarks(inkex.EffectExtension):
         pars.add_argument("--preset", help="Apply crop marks to...", default="gx_24_gs_24")
         pars.add_argument("--page_size", help="Apply crop marks to...", default="A1")
         pars.add_argument("--unit", default="mm", help="Draw measurement")
+        pars.add_argument("--mark_type", default="Four", help="Type of marks")
         pars.add_argument("--new_width", type=float, default=210.0, help="Width")
         pars.add_argument("--new_height", type=float, default=297.0, help="Height")
         pars.add_argument("--area_inset", type=float, default=0.0, help="Cut Area Inset")
@@ -180,6 +182,30 @@ class PrintingMarks(inkex.EffectExtension):
         text.text = "Cutting Area"
         parent.add(text)
 
+    def add_open_path(self, vertices, style, svg_layer):
+        """
+        Adds an open path to the given SVG layer.
+
+        :param vertices: List of (x, y) tuples representing the path vertices.
+        :param style: SVG style string for the path (e.g., "stroke:red; fill:none; stroke-width:2").
+        :param svg_layer: The SVG layer to which the path will be added.
+        :return: The created PathElement.
+        """
+        if not vertices:
+            raise ValueError("No vertices provided")
+
+        # Create path data string
+        path_data = f"M {vertices[0][0]},{vertices[0][1]} "  # Move to the first point
+        path_data += " ".join(f"L {x},{y}" for x, y in vertices[1:])  # Line to subsequent points
+
+        # Create and style the path element
+        path_element = svg_layer.add(inkex.PathElement())
+        path_element.set('d', path_data)  # Set the 'd' attribute with the path data
+        path_element.style = inkex.Style.parse_str(style)
+
+        return path_element
+
+
     def add_helper_layer(self, x, y, width, height):
         """
         Adds a helper layer and draws a hairline rectangle on it.
@@ -267,11 +293,46 @@ class PrintingMarks(inkex.EffectExtension):
         margin_left = self.svg.viewport_to_unit(str(self.options.margin_left) + self.options.unit) 
         margin_right = self.svg.viewport_to_unit(str(self.options.margin_right) + self.options.unit)
 
+        # Edges
+        border_left = bbox.left + margin_left
+        border_right = bbox.right - margin_right
+        border_top = bbox.top + margin_top
+        border_bottom = bbox.bottom - margin_bottom
+
         # Center lines for cropmarks
-        offset_left = bbox.left + margin_left
-        offset_right = bbox.right - margin_right
-        offset_top = bbox.top + margin_top
-        offset_bottom = bbox.bottom - margin_bottom
+        offset_left = bbox.left + margin_left + 10
+        offset_right = bbox.right - margin_right - 10 
+        offset_top = bbox.top + margin_top + 10
+        offset_bottom = bbox.bottom - margin_bottom - 10
+        mark_size = 5
+        top_right_mark = [
+                (border_right - mark_size, border_top),  # Start at top-right inner edge
+                (border_right - mark_size, border_top + mark_size),             # Horizontal line outward
+                (border_right, border_top + mark_size)  # Vertical line downward
+            ]
+
+        top_left_mark = [
+            (border_left + mark_size, border_top),  # Start at top-left inner edge
+            (border_left + mark_size, border_top + mark_size),             # Horizontal line outward
+            (border_left, border_top + mark_size)  # Vertical line downward
+        ]
+
+        bottom_right_mark = [
+            (border_right - mark_size, border_bottom),  # Start at bottom-right inner edge
+            (border_right - mark_size , border_bottom - mark_size),             # Horizontal line outward
+            (border_right, border_bottom - mark_size)  # Vertical line upward
+        ]
+
+        bottom_left_mark = [
+            (border_left + mark_size, border_bottom),  # Start at bottom-left inner edge
+            (border_left + mark_size, border_bottom - mark_size),             # Horizontal line outward
+            (border_left, border_bottom - mark_size)  # Vertical line upward
+        ]
+
+        bottom_left_dia_mark = [
+            (border_left, border_bottom),
+            (border_left + mark_size, border_bottom - mark_size)
+        ]
         
         width = round(offset_right - margin_left, 0)
         height = round(offset_bottom - margin_top, 0)
@@ -280,8 +341,9 @@ class PrintingMarks(inkex.EffectExtension):
 
         cutting_area_x = offset_left + 5
         cutting_area_y = offset_top + 5
-        cutting_area_width = width - 10
-        cutting_area_heignt = height - 10
+        cutting_area_width = width - 20
+        cutting_area_heignt = height - 20
+    
 
         if True:
             self.add_helper_layer(cutting_area_x, cutting_area_y, cutting_area_width, cutting_area_heignt)
@@ -307,6 +369,14 @@ class PrintingMarks(inkex.EffectExtension):
         self.draw_reg_circile(offset_left, offset_top, "Top Left Cropmark", layer)
         self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
         self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
+        if self.options.mark_type == "four":
+            line_mark_style = "fill:none;stroke:#000000;stroke-width:0.18;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+            self.add_open_path(top_right_mark, line_mark_style, layer)
+            self.add_open_path(top_left_mark, line_mark_style, layer)
+            self.add_open_path(bottom_right_mark, line_mark_style, layer)
+            self.add_open_path(bottom_left_mark, line_mark_style, layer)
+            self.add_open_path(bottom_left_dia_mark, line_mark_style, layer)
+            self.draw_reg_circile(offset_right, offset_top, "Top Right Cropmark", layer)
 
     def remove_layers(self, *layer_ids):
         """
