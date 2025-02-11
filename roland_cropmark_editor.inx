@@ -35,10 +35,10 @@
         <option value="three">Three</option>
       </param>
 
-      <label appearance="header">Manual Page Size</label>
+      <label appearance="header">Custom Page Size (only applies when "Custom Size" is selected)</label>
       <param name="new_width"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Width">210</param>
       <param name="new_height"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Height">297</param>
-      <label appearance="header">Manual Cropmarks Margins</label>
+      <label appearance="header">Custom Cropmarks Margins (only applies when "Custom Margins" is selected)</label>
       <param name="margin_top"       type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Top:">40</param>
       <param name="margin_bottom"    type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Bottom:">20</param>
       <param name="margin_left"      type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Left:">20</param>
