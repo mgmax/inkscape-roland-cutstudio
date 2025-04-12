@@ -34,10 +34,6 @@ from lxml import etree
 
 class PrintingMarks(inkex.EffectExtension):
 
-    # TODO add tool marks for manual alingment
-
-    # TODO impemnent a way to emmbedd the custom XML from template to any file
-
     def add_arguments(self, pars):
         pars.add_argument("--preset", help="Apply crop marks to...", default="gx_24_gs_24")
         pars.add_argument("--page_size", help="Apply crop marks to...", default="A1")
@@ -205,7 +201,6 @@ class PrintingMarks(inkex.EffectExtension):
 
         return path_element
 
-
     def add_helper_layer(self, x, y, width, height):
         """
         Adds a helper layer and draws a hairline rectangle on it.
@@ -293,56 +288,33 @@ class PrintingMarks(inkex.EffectExtension):
         margin_left = self.svg.viewport_to_unit(str(self.options.margin_left) + self.options.unit) 
         margin_right = self.svg.viewport_to_unit(str(self.options.margin_right) + self.options.unit)
 
-        # Edges
+        # External edges of the cropmarks
         border_left = bbox.left + margin_left
         border_right = bbox.right - margin_right
         border_top = bbox.top + margin_top
         border_bottom = bbox.bottom - margin_bottom
 
         # Center lines for cropmarks
-        offset_left = bbox.left + margin_left + 10
-        offset_right = bbox.right - margin_right - 10 
-        offset_top = bbox.top + margin_top + 10
-        offset_bottom = bbox.bottom - margin_bottom - 10
-        mark_size = 5
-        top_right_mark = [
-                (border_right - mark_size, border_top),  # Start at top-right inner edge
-                (border_right - mark_size, border_top + mark_size),             # Horizontal line outward
-                (border_right, border_top + mark_size)  # Vertical line downward
-            ]
-
-        top_left_mark = [
-            (border_left + mark_size, border_top),  # Start at top-left inner edge
-            (border_left + mark_size, border_top + mark_size),             # Horizontal line outward
-            (border_left, border_top + mark_size)  # Vertical line downward
-        ]
-
-        bottom_right_mark = [
-            (border_right - mark_size, border_bottom),  # Start at bottom-right inner edge
-            (border_right - mark_size , border_bottom - mark_size),             # Horizontal line outward
-            (border_right, border_bottom - mark_size)  # Vertical line upward
-        ]
-
-        bottom_left_mark = [
-            (border_left + mark_size, border_bottom),  # Start at bottom-left inner edge
-            (border_left + mark_size, border_bottom - mark_size),             # Horizontal line outward
-            (border_left, border_bottom - mark_size)  # Vertical line upward
-        ]
-
-        bottom_left_dia_mark = [
-            (border_left, border_bottom),
-            (border_left + mark_size, border_bottom - mark_size)
-        ]
+        offset_left = bbox.left + margin_left + 5
+        offset_right = bbox.right - margin_right - 5 
+        offset_top = bbox.top + margin_top + 5
+        offset_bottom = bbox.bottom - margin_bottom - 5
         
-        width = round(offset_right - margin_left, 0)
-        height = round(offset_bottom - margin_top, 0)
-        dx = margin_left
-        dy = margin_bottom
+        # CutStudio uses cardinal coordinates for positioning the cropmarks
+        dx = offset_left
+        dy = offset_left
+        # Spacing between the cropmarks
+        width = round(offset_right - offset_left, 0)
+        height = round(offset_bottom - offset_top, 0)
 
+        # Area internal to the cropmarks 
+        # Positioning starting x and y at the edge of the cropmark by adding the radius of the cropmark
         cutting_area_x = offset_left + 5
         cutting_area_y = offset_top + 5
-        cutting_area_width = width - 20
-        cutting_area_heignt = height - 20
+
+        # Subtracting 2 times the radius of the cropmarks
+        cutting_area_width = width - 10
+        cutting_area_heignt = height - 10
     
 
         if True:
@@ -370,13 +342,47 @@ class PrintingMarks(inkex.EffectExtension):
         self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
         self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
         if self.options.mark_type == "four":
+            # Drawing the 4th cropmark
+            self.draw_reg_circile(offset_right, offset_top, "Top Right Cropmark", layer)
+
+            # Drawing manual alignment marks
+            mark_size = 5
+            top_left_mark = [
+                (border_left - mark_size, border_top),  # Horizontal line start
+                (border_left , border_top),             # Border node
+                (border_left, border_top - mark_size)  # Vertical line upwards
+            ]
+            top_right_mark = [
+                (border_right, border_top - mark_size),  # Vertical line start
+                (border_right, border_top),             # Border node
+                (border_right + mark_size, border_top)  # horizontal line to the right
+            ]
+
+            bottom_right_mark = [
+                (border_right + mark_size, border_bottom),  # Horizontal line start
+                (border_right, border_bottom),              # Border node 
+                (border_right, border_bottom + mark_size)  # Vertical line downwards
+            ]
+
+            bottom_left_mark = [
+                (border_left, border_bottom + mark_size),  # Start at bottom-left inner edge
+                (border_left, border_bottom),             # Horizontal line outward
+                (border_left - mark_size, border_bottom)  # Vertical line upward
+            ]
+
+            # Diagonal line to indicate the origin of the document
+            bottom_left_dia_mark = [
+                (border_left, border_bottom),           
+                (border_left - mark_size, border_bottom + mark_size)
+            ]
             line_mark_style = "fill:none;stroke:#000000;stroke-width:0.18;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
             self.add_open_path(top_right_mark, line_mark_style, layer)
             self.add_open_path(top_left_mark, line_mark_style, layer)
             self.add_open_path(bottom_right_mark, line_mark_style, layer)
             self.add_open_path(bottom_left_mark, line_mark_style, layer)
             self.add_open_path(bottom_left_dia_mark, line_mark_style, layer)
-            self.draw_reg_circile(offset_right, offset_top, "Top Right Cropmark", layer)
+
+
 
     def remove_layers(self, *layer_ids):
         """
