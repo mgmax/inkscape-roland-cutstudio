@@ -35,7 +35,8 @@ from lxml import etree
 class PrintingMarks(inkex.EffectExtension):
 
     def add_arguments(self, pars):
-        pars.add_argument("--preset", help="Apply crop marks to...", default="gx_24_gs_24")
+        pars.add_argument("--preset", help="Machine type (or 'custom' to use custom margins)", default="gx_24_gs_24")
+
         pars.add_argument("--page_size", help="Apply crop marks to...", default="A1")
         pars.add_argument("--unit", default="mm", help="Draw measurement")
         pars.add_argument("--mark_type", default="Four", help="Type of marks")
