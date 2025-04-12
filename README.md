@@ -32,8 +32,7 @@ Before using this option, CutStudio must be set up so that normal use works prop
 
 1. Open Inkscape, create a new blank file.
 2. Open the Extensions menu, then select Roland CutStudio -> Insert Cropmarks.
-3. ~~You now have an example file with DIN A4 pagesize and crop marks that should work on a Roland GX-24 (and hopefully many other plotters). Changing the page size and cropmark position is currently not possible.~~
-    You can edit the example file by Extensions -> Roland CutStudio -> Roland Cropmark Editor.
+3. You now have an example file with DIN A4 pagesize and crop marks that should work on a Roland GX-24 (and hopefully many other plotters). You can change the page size and cropmark position with Extensions -> Roland CutStudio -> Roland Cropmark Editor.
 4. Choose your margin preferance, paper size and the type of cropmarks to use (three or four).  
 6. The following explanation uses separate layers for printing and drawing. You can also do it in a different way.
 7. Draw your print graphics on the layer "Print graphics". Remove the "Remove me" placeholder.
