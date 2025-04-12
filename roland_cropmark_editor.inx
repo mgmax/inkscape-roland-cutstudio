@@ -4,8 +4,8 @@
   <id>org.inkscape.generate.roland_cropmark_editor</id>
 
   <param name="tab" type="notebook">
-    <page name="pos" gui-text="Settings">
-      <param name="preset" type="optiongroup" appearance="combo" gui-text="Choose the machine:">
+    <page name="settings" gui-text="Settings">
+      <param name="preset" type="optiongroup" appearance="combo" gui-text="Choose machine margins:">
         <option value="gx_24_gs_24">GX-24/GS2-24/GS-24</option>
         <option value="gr_g">GR-640/540/420, GX-640/500/400</option>
         <option value="sv_series">SV-15, SV-12</option>
@@ -22,13 +22,6 @@
         <option value="keep">Keep Existing</option>
       </param>
 
-      <param name="unit" gui-text="Unit:" type="optiongroup" appearance="combo">
-        <option translatable="no" value="mm">mm</option>
-        <option translatable="no" value="px">px</option>
-        <option translatable="no" value="pt">pt</option>
-        <option translatable="no" value="in">in</option>
-        <option translatable="no" value="cm">cm</option>
-      </param>
 
       <param name="mark_type" gui-text="Mark " type="optiongroup" appearance="combo">
         <option value="four">Four</option>
@@ -36,13 +29,44 @@
       </param>
 
       <label appearance="header">Custom Page Size (only applies when "Custom Size" is selected)</label>
-      <param name="new_width"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Width">210</param>
-      <param name="new_height"        type="float"  indent="1" min="0.0"  max="9999.0" precision="3" gui-text="New Page Height">297</param>
+      <param name="new_page_unit" gui-text="Unit:" type="optiongroup" indent="10" appearance="combo">
+        <option translatable="no" value="mm">mm</option>
+        <option translatable="no" value="px">px</option>
+        <option translatable="no" value="pt">pt</option>
+        <option translatable="no" value="in">in</option>
+        <option translatable="no" value="cm">cm</option>
+      </param>
+      <param name="new_width"        type="float"  indent="5" min="0.0"  max="9999.0" precision="3" gui-text="New Page Width">210</param>
+      <param name="new_height"        type="float"  indent="5" min="0.0"  max="9999.0" precision="3" gui-text="New Page Height">297</param>
       <label appearance="header">Custom Cropmarks Margins (only applies when "Custom Margins" is selected)</label>
-      <param name="margin_top"       type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Top:">40</param>
-      <param name="margin_bottom"    type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Bottom:">20</param>
-      <param name="margin_left"      type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Left:">20</param>
-      <param name="margin_right"     type="float"  indent="1" min="0.0"  max="9999.0"  precision="3" gui-text="Right:">20</param>
+      <param name="new_margins_unit" gui-text="Unit:" type="optiongroup"  indent="10" appearance="combo">
+        <option translatable="no" value="mm">mm</option>
+        <option translatable="no" value="px">px</option>
+        <option translatable="no" value="pt">pt</option>
+        <option translatable="no" value="in">in</option>
+        <option translatable="no" value="cm">cm</option>
+      </param>
+      <param name="margin_top"       type="float"  indent="5" min="0.0"  max="9999.0"  precision="3" gui-text="Top:">40</param>
+      <param name="margin_bottom"    type="float"  indent="5" min="0.0"  max="9999.0"  precision="3" gui-text="Bottom:">20</param>
+      <param name="margin_left"      type="float"  indent="5" min="0.0"  max="9999.0"  precision="3" gui-text="Left:">20</param>
+      <param name="margin_right"     type="float"  indent="5" min="0.0"  max="9999.0"  precision="3" gui-text="Right:">20</param>
+    </page>
+    <page name="about" gui-text="About">
+      <label>This extension creates and edits cropmarks for print and cut documents compatible with Roland's CutStudio software. To ensure proper functionality during print and cut operations, you must start with a custom template file as your base document. You can add this template by selecting the "Insert Cropmarks" option from the extension's menu.</label>
+      <label appearance="header">Default machine margins</label>
+      <label xml:space="preserve">The defaults are a slight compromise for simplicity:
+
+        Machine Model         | Top   | Bottom | Left  | Right 
+        --------------------- | ----- | ------ | ----- | -----
+        GX-24/GS2-24/GS-24    | 60 mm | 20 mm  | 15 mm | 15 mm
+        GR-640/540/420        | 30 mm | 45 mm  | 10 mm | 10 mm
+        GX-640/500/400        | 30 mm | 45 mm  | 10 mm | 10 mm
+        SV-15, SV-12          | 6 mm  | 30 mm  | 23 mm | 23 mm
+        SV-8                  | 6 mm  | 30 mm  | 23 mm | 23 mm
+
+      </label>
+      <label>For more information about cropmark margins visit:</label>
+      <label appearance="url">https://files.rolanddga.com/Files/CutStudioManual/CutStudio/!SSL!/Responsive_HTML5/Hints_and_Tips/crop_position.html</label>
     </page>
   </param>
 

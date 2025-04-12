@@ -37,10 +37,11 @@ class PrintingMarks(inkex.EffectExtension):
     def add_arguments(self, pars):
         pars.add_argument("--preset", help="Machine type (or 'custom' to use custom margins)", default="gx_24_gs_24")
         pars.add_argument("--page_size", help="Page size (or 'custom' to use custom new_width and new_height, or 'keep' to keep old page size)", default="A1")
-        pars.add_argument("--unit", default="mm", help="Draw measurement")
         pars.add_argument("--mark_type", default="Four", help="Type of marks")
+        pars.add_argument("--new_page_unit", default="mm", help="Units for the custom page size")
         pars.add_argument("--new_width", type=float, default=210.0, help="Width")
         pars.add_argument("--new_height", type=float, default=297.0, help="Height")
+        pars.add_argument("--new_margins_unit", default="mm", help="Units for the custom margins")
         pars.add_argument("--margin_top", type=float, default=40.0, help="Bleed Top Size")
         pars.add_argument("--margin_bottom", type=float, default=20.0, help="Bleed Bottom Size")
         pars.add_argument("--margin_left", type=float, default=20.0, help="Bleed Left Size")
@@ -52,9 +53,9 @@ class PrintingMarks(inkex.EffectExtension):
         Applies page size and margin presets based on user-selected options.
         Overrides only if the user has not selected 'custom' or 'keep' (for page size).
         """
-        # Preset margins for machines
+        # Preset margins for machines (all in mm)
         machine_margins = {
-            "gx_24_gs_24": {"top": 60.0, "bottom":  20.0, "left": 15.0, "right": 15.0},
+            "gx_24_gs_24": {"top": 60.0, "bottom": 20.0, "left": 15.0, "right": 15.0},
             "gr_g": {"top": 30.0, "bottom": 45.0, "left": 10.0, "right": 10.0},
             "sv_series": {"top": 6.0, "bottom": 30.0, "left": 23.0, "right": 23.0},
             "sv_8": {"top": 6.0, "bottom": 30.0, "left": 23.0, "right": 23.0},
@@ -74,6 +75,8 @@ class PrintingMarks(inkex.EffectExtension):
                 page = page_sizes[self.options.page_size]
                 self.options.new_width = page["width"]
                 self.options.new_height = page["height"]
+                # Set page unit to mm for preset sizes
+                self.options.new_page_unit = "mm"
 
         # Handle margin overwrites unless "manual" is selected
         if self.options.preset != "custom":
@@ -83,26 +86,31 @@ class PrintingMarks(inkex.EffectExtension):
                 self.options.margin_bottom = margins["bottom"]
                 self.options.margin_left = margins["left"]
                 self.options.margin_right = margins["right"]
+                # Force use of mm for preset margins regardless of user margin unit selection
+                self.options.new_margins_unit = "mm"
 
     def apply_resize_page(self, width, height, unit="mm"):
         """
         Resize the SVG page to the given width and height.
-
+        
         Args:
-            self: The extension object (used to access the SVG root).
             width (float): Desired width of the page.
             height (float): Desired height of the page.
             unit (str): Unit for the dimensions (e.g., "mm", "px", "in"). Default is "mm".
         """
         # Access the SVG root element
         root = self.document.getroot()
-
-        # Set the new page size
+        
+        # Convert to user units
+        width_px = self.svg.viewport_to_unit(f"{width}{unit}")
+        height_px = self.svg.viewport_to_unit(f"{height}{unit}")
+        
+        # Set the new page size with original units (for display purposes)
         root.set("width", f"{width}{unit}")
         root.set("height", f"{height}{unit}")
-
-        # Update the viewBox to match the new dimensions
-        root.set("viewBox", f"0 0 {width} {height}")
+        
+        # Update the viewBox using the converted user units (px)
+        root.set("viewBox", f"0 0 {width_px} {height_px}")
 
     def draw_reg_circile(self, x, y, name, parent):
         """Draw a circle with 10mm diameter and black fill, no stroke, at specified position."""
@@ -223,7 +231,7 @@ class PrintingMarks(inkex.EffectExtension):
         # Call the draw_hairline_rectangle function to add the rectangle to the layer
         self.draw_hairline_rectangle(layer, x, y, width, height)
 
-    def add_cropmark_settings_text(self, pageW, pageH, dx, dy, W, H, x, y, parent):
+    def add_cropmark_settings_text(self, parent, pageW, pageH, dx, dy, W, H, x, y):
             """
             Adds a text object to the given parent with crop mark settings.
 
@@ -237,7 +245,6 @@ class PrintingMarks(inkex.EffectExtension):
                 H (float): Height in user units.
                 x (float): X-coordinate for the text.
                 y (float): Y-coordinate for the text.
-                font_size (str): Font size for the text. Default is "9pt".
             """
             # Convert numeric values to integers to remove decimal points
             pageW = float(pageW)
@@ -262,8 +269,6 @@ class PrintingMarks(inkex.EffectExtension):
             }
             txt = parent.add(inkex.TextElement(**txt_attribs))
             
-
-            # Construct the cropmark settings string without the extra {{
             txt.text = (
                 f'INKSCAPE_CUTSTUDIO_CROPMARK_SETTINGS={{"version":1, '
                 f'"pageW":{pageW}, "pageH":{pageH}, '
@@ -289,10 +294,10 @@ class PrintingMarks(inkex.EffectExtension):
         layer.set("sodipodi:insensitive", "true")
         
         # Convert parameters to user unit
-        margin_top = self.svg.viewport_to_unit(str(self.options.margin_top) + self.options.unit)
-        margin_bottom = self.svg.viewport_to_unit(str(self.options.margin_bottom) + self.options.unit)
-        margin_left = self.svg.viewport_to_unit(str(self.options.margin_left) + self.options.unit) 
-        margin_right = self.svg.viewport_to_unit(str(self.options.margin_right) + self.options.unit)
+        margin_top = self.svg.viewport_to_unit(str(self.options.margin_top) + self.options.new_margins_unit)
+        margin_bottom = self.svg.viewport_to_unit(str(self.options.margin_bottom) + self.options.new_margins_unit)
+        margin_left = self.svg.viewport_to_unit(str(self.options.margin_left) + self.options.new_margins_unit) 
+        margin_right = self.svg.viewport_to_unit(str(self.options.margin_right) + self.options.new_margins_unit)
 
         # External edges of the cropmarks
         border_left = bbox.left + margin_left
@@ -311,8 +316,8 @@ class PrintingMarks(inkex.EffectExtension):
             dx = offset_left
             dy = offset_left
             # Spacing between the cropmarks
-            width = offset_right - offset_left, 5
-            height = offset_bottom - offset_top, 5
+            width = offset_right - offset_left
+            height = offset_bottom - offset_top
 
             # Area internal to the cropmarks 
             # Positioning starting x and y at the edge of the cropmark by adding the radius of the cropmark
@@ -329,7 +334,7 @@ class PrintingMarks(inkex.EffectExtension):
 
 
             # Cropmark Information
-            self.add_cropmark_settings_text(bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20), layer)
+            self.add_cropmark_settings_text(layer, bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20))
             self.draw_reg_circile(offset_left, offset_top, "Top Left Cropmark", layer)
             self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
             self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
@@ -364,7 +369,7 @@ class PrintingMarks(inkex.EffectExtension):
             middle_horizontal = bbox.left + (bbox.width / 2)
 
             # Cropmark Information
-            self.add_cropmark_settings_text(bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20), layer)
+            self.add_cropmark_settings_text(layer, bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20))
             self.draw_reg_circile(offset_left, offset_top, "Top Left Cropmark", layer)
             self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
             self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
@@ -411,7 +416,6 @@ class PrintingMarks(inkex.EffectExtension):
         if True:
             self.add_helper_layer(cutting_area_x, cutting_area_y, cutting_area_width, cutting_area_heignt)
 
-
     def remove_layers(self, *layer_ids):
         """
         Removes layers with specified IDs from the SVG document.
@@ -445,10 +449,11 @@ class PrintingMarks(inkex.EffectExtension):
         # Handle single-page document
         if len(pages) < 2:
             if self.options.page_size != "keep":
+                # Pass values with units to the function
                 self.apply_resize_page(
-                self.svg.viewport_to_unit(str(self.options.new_width) + self.options.unit), 
-                self.svg.viewport_to_unit(str(self.options.new_height) + self.options.unit),
-                self.options.unit
+                    self.options.new_width,  # Just pass the numeric value 
+                    self.options.new_height, # Just pass the numeric value
+                    self.options.new_page_unit       # Pass the unit separately
                 )
             self.draw_effect(self.svg.get_page_bbox(), "")
         else:
