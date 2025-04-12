@@ -37,7 +37,8 @@ class PrintingMarks(inkex.EffectExtension):
     def add_arguments(self, pars):
         pars.add_argument("--preset", help="Machine type (or 'custom' to use custom margins)", default="gx_24_gs_24")
 
-        pars.add_argument("--page_size", help="Apply crop marks to...", default="A1")
+        pars.add_argument("--page_size", help="Page size (or 'custom' to use custom new_width and new_height, or 'keep' to keep old page size)", default="A1")
+
         pars.add_argument("--unit", default="mm", help="Draw measurement")
         pars.add_argument("--mark_type", default="Four", help="Type of marks")
         pars.add_argument("--new_width", type=float, default=210.0, help="Width")
