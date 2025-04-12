@@ -36,14 +36,11 @@ class PrintingMarks(inkex.EffectExtension):
 
     def add_arguments(self, pars):
         pars.add_argument("--preset", help="Machine type (or 'custom' to use custom margins)", default="gx_24_gs_24")
-
         pars.add_argument("--page_size", help="Page size (or 'custom' to use custom new_width and new_height, or 'keep' to keep old page size)", default="A1")
-
         pars.add_argument("--unit", default="mm", help="Draw measurement")
         pars.add_argument("--mark_type", default="Four", help="Type of marks")
         pars.add_argument("--new_width", type=float, default=210.0, help="Width")
         pars.add_argument("--new_height", type=float, default=297.0, help="Height")
-        pars.add_argument("--area_inset", type=float, default=0.0, help="Cut Area Inset")
         pars.add_argument("--margin_top", type=float, default=40.0, help="Bleed Top Size")
         pars.add_argument("--margin_bottom", type=float, default=20.0, help="Bleed Bottom Size")
         pars.add_argument("--margin_left", type=float, default=20.0, help="Bleed Left Size")
@@ -226,9 +223,7 @@ class PrintingMarks(inkex.EffectExtension):
         # Call the draw_hairline_rectangle function to add the rectangle to the layer
         self.draw_hairline_rectangle(layer, x, y, width, height)
 
-    def add_cropmark_settings_text(
-        self, pageW, pageH, dx, dy, W, H, x, y, parent
-        ):
+    def add_cropmark_settings_text(self, pageW, pageH, dx, dy, W, H, x, y, parent):
             """
             Adds a text object to the given parent with crop mark settings.
 
@@ -294,9 +289,6 @@ class PrintingMarks(inkex.EffectExtension):
         layer.set("sodipodi:insensitive", "true")
         
         # Convert parameters to user unit
-        offset = self.svg.viewport_to_unit(
-            str(self.options.area_inset) + self.options.unit
-        )
         margin_top = self.svg.viewport_to_unit(str(self.options.margin_top) + self.options.unit)
         margin_bottom = self.svg.viewport_to_unit(str(self.options.margin_bottom) + self.options.unit)
         margin_left = self.svg.viewport_to_unit(str(self.options.margin_left) + self.options.unit) 
