@@ -55,10 +55,10 @@ class PrintingMarks(inkex.EffectExtension):
         """
         # Preset margins for machines
         machine_margins = {
-            "gx_24_gs_24": {"top": 40.0, "bottom": 20.0, "left": 20.0, "right": 20.0},
+            "gx_24_gs_24": {"top": 60.0, "bottom":  20.0, "left": 15.0, "right": 15.0},
             "gr_g": {"top": 30.0, "bottom": 45.0, "left": 10.0, "right": 10.0},
             "sv_series": {"top": 6.0, "bottom": 30.0, "left": 23.0, "right": 23.0},
-            "sv_8": {"top": 6.0, "bottom": 30.0, "left": 25.0, "right": 24.0},
+            "sv_8": {"top": 6.0, "bottom": 30.0, "left": 23.0, "right": 23.0},
         }
 
         # Page size dimensions in mm
@@ -243,12 +243,12 @@ class PrintingMarks(inkex.EffectExtension):
                 font_size (str): Font size for the text. Default is "9pt".
             """
             # Convert numeric values to integers to remove decimal points
-            pageW = int(pageW)
-            pageH = int(pageH)
-            dx = int(dx)
-            dy = int(dy)
-            W = int(W)
-            H = int(H)
+            pageW = float(pageW)
+            pageH = float(pageH)
+            dx = float(dx)
+            dy = float(dy)
+            W = float(W)
+            H = float(H)
 
             text_style = {
                 "fill": "#000000",  
@@ -278,7 +278,19 @@ class PrintingMarks(inkex.EffectExtension):
         # Get SVG document dimensions
         # self.width must be replaced by bbox.right. same to others.
         svg = self.document.getroot()
+        
+        # Construct layer id and layer name
+        layer_id = "cropmarks"
+        layer_name = "Cropmarks - do not edit"
+        if name != "":
+            layer_id += "-" + name
+            layer_name += " " + name
 
+        # Create a new layer
+        layer = svg.add(inkex.Layer.new(layer_name))
+        layer.set("id", layer_id)
+        layer.set("sodipodi:insensitive", "true")
+        
         # Convert parameters to user unit
         offset = self.svg.viewport_to_unit(
             str(self.options.area_inset) + self.options.unit
@@ -294,86 +306,105 @@ class PrintingMarks(inkex.EffectExtension):
         border_top = bbox.top + margin_top
         border_bottom = bbox.bottom - margin_bottom
 
-        # Center lines for cropmarks
-        offset_left = bbox.left + margin_left + 5
-        offset_right = bbox.right - margin_right - 5 
-        offset_top = bbox.top + margin_top + 5
-        offset_bottom = bbox.bottom - margin_bottom - 5
-        
-        # CutStudio uses cardinal coordinates for positioning the cropmarks
-        dx = offset_left
-        dy = offset_left
-        # Spacing between the cropmarks
-        width = round(offset_right - offset_left, 0)
-        height = round(offset_bottom - offset_top, 0)
+        if self.options.mark_type == "three":
+            # Center lines for cropmarks
+            offset_left = bbox.left + margin_left + 5
+            offset_right = bbox.right - margin_right - 5 
+            offset_top = bbox.top + margin_top + 5
+            offset_bottom = bbox.bottom - margin_bottom - 5
+            
+            # CutStudio uses cardinal coordinates for positioning the cropmarks
+            dx = offset_left
+            dy = offset_left
+            # Spacing between the cropmarks
+            width = offset_right - offset_left, 5
+            height = offset_bottom - offset_top, 5
 
-        # Area internal to the cropmarks 
-        # Positioning starting x and y at the edge of the cropmark by adding the radius of the cropmark
-        cutting_area_x = offset_left + 5
-        cutting_area_y = offset_top + 5
+            # Area internal to the cropmarks 
+            # Positioning starting x and y at the edge of the cropmark by adding the radius of the cropmark
+            cutting_area_x = offset_left + 5
+            cutting_area_y = offset_top + 5
 
-        # Subtracting 2 times the radius of the cropmarks
-        cutting_area_width = width - 10
-        cutting_area_heignt = height - 10
-    
+            # Subtracting 2 times the radius of the cropmarks
+            cutting_area_width = width - 10
+            cutting_area_heignt = height - 10
 
-        if True:
-            self.add_helper_layer(cutting_area_x, cutting_area_y, cutting_area_width, cutting_area_heignt)
+            # Get middle positions
+            middle_vertical = bbox.top + (bbox.height / 2)
+            middle_horizontal = bbox.left + (bbox.width / 2)
 
-        # Get middle positions
-        middle_vertical = bbox.top + (bbox.height / 2)
-        middle_horizontal = bbox.left + (bbox.width / 2)
 
-        # Construct layer id and layer name
-        layer_id = "cropmarks"
-        layer_name = "Cropmarks - do not edit"
-        if name != "":
-            layer_id += "-" + name
-            layer_name += " " + name
+            # Cropmark Information
+            self.add_cropmark_settings_text(bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20), layer)
+            self.draw_reg_circile(offset_left, offset_top, "Top Left Cropmark", layer)
+            self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
+            self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
 
-        # Create a new layer
-        layer = svg.add(inkex.Layer.new(layer_name))
-        layer.set("id", layer_id)
-        layer.set("sodipodi:insensitive", "true")
-        
-        # Cropmark Information
-        self.add_cropmark_settings_text(bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20), layer)
-        self.draw_reg_circile(offset_left, offset_top, "Top Left Cropmark", layer)
-        self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
-        self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
         if self.options.mark_type == "four":
-            # Drawing the 4th cropmark
+
+            # Center lines for cropmarks (with 4 crop marks the crop marks are pushed inwards by the manual marks)
+            mark_size = 5
+            offset_left = bbox.left + margin_left + (5 + mark_size)
+            offset_right = bbox.right - margin_right - (5 + mark_size)
+            offset_top = bbox.top + margin_top + (5 + mark_size)
+            offset_bottom = bbox.bottom - margin_bottom - (5 + mark_size)
+            
+            # CutStudio uses cardinal coordinates for positioning the cropmarks
+            dx = offset_left
+            dy = offset_left
+            # Spacing between the cropmarks
+            width = offset_right - offset_left
+            height = offset_bottom - offset_top
+
+            # Area internal to the cropmarks 
+            # Positioning starting x and y at the edge of the cropmark by adding the radius of the cropmark
+            cutting_area_x = offset_left + 5
+            cutting_area_y = offset_top + 5
+
+            # Subtracting 2 times the radius of the cropmarks
+            cutting_area_width = width - 10
+            cutting_area_heignt = height - 10
+
+            # Get middle positions
+            middle_vertical = bbox.top + (bbox.height / 2)
+            middle_horizontal = bbox.left + (bbox.width / 2)
+
+            # Cropmark Information
+            self.add_cropmark_settings_text(bbox.right, bbox.bottom, dx, dy, width, height, str(middle_horizontal), str(bbox.bottom + 20), layer)
+            self.draw_reg_circile(offset_left, offset_top, "Top Left Cropmark", layer)
+            self.draw_reg_circile(offset_left, offset_bottom, "Bottom Left Cropmark", layer)
+            self.draw_reg_circile(offset_right, offset_bottom, "Bottom Right Cropmark", layer)
             self.draw_reg_circile(offset_right, offset_top, "Top Right Cropmark", layer)
 
             # Drawing manual alignment marks
-            mark_size = 5
-            top_left_mark = [
-                (border_left - mark_size, border_top),  # Horizontal line start
-                (border_left , border_top),             # Border node
-                (border_left, border_top - mark_size)  # Vertical line upwards
-            ]
+            
             top_right_mark = [
-                (border_right, border_top - mark_size),  # Vertical line start
-                (border_right, border_top),             # Border node
-                (border_right + mark_size, border_top)  # horizontal line to the right
+                (border_right - mark_size, border_top),  # Start at top-right inner edge
+                (border_right - mark_size, border_top + mark_size),             # Horizontal line outward
+                (border_right, border_top + mark_size)  # Vertical line downward
+            ]
+
+            top_left_mark = [
+                (border_left + mark_size, border_top),  # Start at top-left inner edge
+                (border_left + mark_size, border_top + mark_size),             # Horizontal line outward
+                (border_left, border_top + mark_size)  # Vertical line downward
             ]
 
             bottom_right_mark = [
-                (border_right + mark_size, border_bottom),  # Horizontal line start
-                (border_right, border_bottom),              # Border node 
-                (border_right, border_bottom + mark_size)  # Vertical line downwards
+                (border_right - mark_size, border_bottom),  # Start at bottom-right inner edge
+                (border_right - mark_size , border_bottom - mark_size),             # Horizontal line outward
+                (border_right, border_bottom - mark_size)  # Vertical line upward
             ]
 
             bottom_left_mark = [
-                (border_left, border_bottom + mark_size),  # Start at bottom-left inner edge
-                (border_left, border_bottom),             # Horizontal line outward
-                (border_left - mark_size, border_bottom)  # Vertical line upward
+                (border_left + mark_size, border_bottom),  # Start at bottom-left inner edge
+                (border_left + mark_size, border_bottom - mark_size),             # Horizontal line outward
+                (border_left, border_bottom - mark_size)  # Vertical line upward
             ]
 
-            # Diagonal line to indicate the origin of the document
             bottom_left_dia_mark = [
-                (border_left, border_bottom),           
-                (border_left - mark_size, border_bottom + mark_size)
+                (border_left, border_bottom),
+                (border_left + mark_size, border_bottom - mark_size)
             ]
             line_mark_style = "fill:none;stroke:#000000;stroke-width:0.18;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
             self.add_open_path(top_right_mark, line_mark_style, layer)
@@ -382,6 +413,9 @@ class PrintingMarks(inkex.EffectExtension):
             self.add_open_path(bottom_left_mark, line_mark_style, layer)
             self.add_open_path(bottom_left_dia_mark, line_mark_style, layer)
 
+        # Draw helper layer
+        if True:
+            self.add_helper_layer(cutting_area_x, cutting_area_y, cutting_area_width, cutting_area_heignt)
 
 
     def remove_layers(self, *layer_ids):
