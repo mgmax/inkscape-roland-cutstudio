@@ -63,7 +63,7 @@ Follow the steps above. Once the plugin has completed the export, you'll see a d
     2. To install system-wide: open the same preferences tab. The correct folder is listed further down under 'Inkscape extensions'.
 3. Restart Inkscape.
 
-[zip]: https://github.com/mgmax/inkscape-roland-cutstudio/archive/refs/heads/master.zip
+[zip]: https://github.com/dodomarg/inkscape-roland-cutstudio/archive/refs/heads/master.zip
 
 ### Installation notes
 
