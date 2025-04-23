@@ -307,14 +307,14 @@ class PrintingMarks(inkex.EffectExtension):
 
         if self.options.mark_type == "three":
             # Center lines for cropmarks
-            offset_left = bbox.left + margin_left + 5
+            offset_left = bbox.left + margin_left + 5 
             offset_right = bbox.right - margin_right - 5 
             offset_top = bbox.top + margin_top + 5
             offset_bottom = bbox.bottom - margin_bottom - 5
             
-            # CutStudio uses cardinal coordinates for positioning the cropmarks
+            # CutStudio uses uses bottom left origin 
             dx = offset_left
-            dy = offset_left
+            dy = bbox.bottom - offset_bottom 
             # Spacing between the cropmarks
             width = offset_right - offset_left
             height = offset_bottom - offset_top
@@ -348,9 +348,9 @@ class PrintingMarks(inkex.EffectExtension):
             offset_top = bbox.top + margin_top + (5 + mark_size)
             offset_bottom = bbox.bottom - margin_bottom - (5 + mark_size)
             
-            # CutStudio uses cardinal coordinates for positioning the cropmarks
+            # CutStudio uses uses bottom left origin 
             dx = offset_left
-            dy = offset_left
+            dy = bbox.bottom - offset_bottom #CutStudio uses bottom left origin 
             # Spacing between the cropmarks
             width = offset_right - offset_left
             height = offset_bottom - offset_top
