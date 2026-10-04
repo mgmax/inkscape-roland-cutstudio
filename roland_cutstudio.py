@@ -56,9 +56,9 @@ def which(program, raiseError, extraPaths=[], subdir=None):
     """
     pathlist=os.environ["PATH"].split(os.pathsep)
     if "nt" in os.name:
-        pathlist.append(os.environ.get("ProgramFiles","C:\Program Files\\"))
-        pathlist.append(os.environ.get("ProgramFiles(x86)","C:\Program Files (x86)\\"))
-        pathlist.append("C:\Program Files\\") # needed for 64bit inkscape on 64bit Win7 machines
+        pathlist.append(os.environ.get("ProgramFiles","C:\\Program Files\\"))
+        pathlist.append(os.environ.get("ProgramFiles(x86)","C:\\Program Files (x86)\\"))
+        pathlist.append("C:\\Program Files\\") # needed for 64bit inkscape on 64bit Win7 machines
         pathlist.append(os.path.dirname(os.path.dirname(os.getcwd()))) # portable application in the current directory
     pathlist += extraPaths
     if subdir:
@@ -511,12 +511,12 @@ def open_in_cutstudio(cutstudio_eps_file: str) -> None:
     if os.name=="nt":
         # on Windows
         DETACHED_PROCESS = 8 # start as "daemon"
-        Popen([which("CutStudio\CutStudio.exe", True), "/import", cutstudio_eps_file], creationflags=DETACHED_PROCESS, close_fds=True)
+        Popen([which("CutStudio\\CutStudio.exe", True), "/import", cutstudio_eps_file], creationflags=DETACHED_PROCESS, close_fds=True)
     else:
         # On Linux, try with "wine"
         CUTSTUDIO_C_DRIVE = str(Path.home()) + "/.wine/drive_c/"
         CUTSTUDIO_PATH_LINUX_WINE = CUTSTUDIO_C_DRIVE + "Program Files (x86)/CutStudio/CutStudio.exe"
-        CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_PATH_LINUX_WINE, "/import", r'C:\cutstudio.eps']
+        CUTSTUDIO_COMMANDLINE = ["wine", CUTSTUDIO_PATH_LINUX_WINE, "/import", r'C:\\cutstudio.eps']
         try:
             if not which("wine", False):
                     raise Exception("Cannot find 'wine'")
